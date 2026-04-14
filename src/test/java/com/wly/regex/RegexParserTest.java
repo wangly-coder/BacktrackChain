@@ -4,12 +4,12 @@ import com.wly.regex.exp.RegexExp;
 import com.wly.regex.util.ASTVisualizer;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class RegexParserTest {
 
     RegexParser regexParser;
-    ASTVisualizer astVisualizer = new ASTVisualizer();
 
     @BeforeEach
     public void setUp(){
@@ -20,7 +20,7 @@ public class RegexParserTest {
     public void testCharExp1(){
         String regex = "a";
         RegexExp regexExp = regexParser.parse(regex);
-        String tree = astVisualizer.getASTString(regexExp);
+        String tree = ASTVisualizer.getASTString(regexExp);
         System.out.printf("<========================\n%s========================>%n",tree);
         assertEquals("[Char:a]\n", tree);
     }
@@ -29,7 +29,7 @@ public class RegexParserTest {
     public void testCharCollectionExp1(){
         String regex = "[-\\w+abA-a-]";
         RegexExp regexExp = regexParser.parse(regex);
-        String tree = astVisualizer.getASTString(regexExp);
+        String tree = ASTVisualizer.getASTString(regexExp);
         System.out.printf("<========================\n%s========================>%n",tree);
         assertEquals("[CharCollection]\n"+
             "    ├──[Char:-]\n" +
@@ -43,6 +43,7 @@ public class RegexParserTest {
     }
 
     // 测试异常情况
+    @DisplayName("异常测试-testCharCollectionExp2")
     @Test
     public void testCharCollectionExp2(){
         String regex = "[z-a]";
@@ -54,7 +55,7 @@ public class RegexParserTest {
     public void testRepeatExp1(){
         String regex = "[-\\w+abA-a-]{1,5}";
         RegexExp regexExp = regexParser.parse(regex);
-        String tree = astVisualizer.getASTString(regexExp);
+        String tree = ASTVisualizer.getASTString(regexExp);
         System.out.printf("<========================\n%s========================>%n",tree);
         assertEquals("[Repeat:{1,5}]\n"+
                         "    └──[CharCollection]\n" +
@@ -69,6 +70,7 @@ public class RegexParserTest {
     }
 
     // 测试异常情况
+    @DisplayName("异常测试-testRepeatExp2")
     @Test
     public void testRepeatExp2(){
         String regex = "[-\\w+abA-a-]{5,1}";
@@ -81,7 +83,7 @@ public class RegexParserTest {
     public void testUnionAndConcatExp1(){
         String regex = "a[^-bA-a]c|abb*";
         RegexExp regexExp = regexParser.parse(regex);
-        String tree = astVisualizer.getASTString(regexExp);
+        String tree = ASTVisualizer.getASTString(regexExp);
         System.out.printf("<========================\n%s========================>%n",tree);
         assertEquals("[Union]\n"+
                 "    ├──[Concat]\n"+
@@ -106,7 +108,7 @@ public class RegexParserTest {
     public void testCharGroupExp1(){
         String regex = "a[^-bA-a]c|abb*|(a|ba)+";
         RegexExp regexExp = regexParser.parse(regex);
-        String tree = astVisualizer.getASTString(regexExp);
+        String tree = ASTVisualizer.getASTString(regexExp);
         System.out.printf("<========================\n%s========================>%n",tree);
         assertEquals("[Union]\n"+
                         "    ├──[Concat]\n"+
