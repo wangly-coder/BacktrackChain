@@ -65,7 +65,7 @@ public class RegexParser {
      * @return
      */
     protected boolean matchChar(char target){
-        if(this.isEnd() | this.regexString.charAt(pointer) != target) return false;
+        if(this.isEnd() || this.regexString.charAt(pointer) != target) return false;
         this.pointer++;
         return true;
     }
@@ -97,7 +97,7 @@ public class RegexParser {
         while(next >= 48 && next <= 57){next = this.next();}
         // 如果不是数字那么返回0
         if (this.pointer - initialPos <= 1) throw new RuntimeException(String.format("未能解析出数字，位置%d,符号%s",this.pointer, next));
-        return Integer.parseInt(this.regexString.substring(initialPos, this.pointer));
+        return Integer.parseInt(this.regexString.substring(initialPos, --this.pointer));
     }
 
     /**
@@ -105,6 +105,11 @@ public class RegexParser {
      * @return AST的正则表达式，对应RegexExp类
      */
     public RegexExp parse() {
+        return this.parseUnionExp();
+    }
+
+    public RegexExp parse(String regexString) {
+        this.regexString = regexString;
         return this.parseUnionExp();
     }
 
@@ -132,15 +137,10 @@ public class RegexParser {
         // 开始解析修饰符
         int min, max;
         if (!this.isEnd()) {
-            if (this.matchChar('?')) {
-                min = 0;
-                max = 1;
-            } else if (this.matchChar('*')) {
-                min = max = 0;
-            } else if (this.matchChar('+')) {
-                min = 1;
-                max = 0;
-            } else if (this.matchChar('{')) {
+            if (this.matchChar('?')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.QUESTION).build();
+            if (this.matchChar('*')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.STAR).build();
+            if (this.matchChar('+')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.PLUS).build();
+            if (this.matchChar('{')) {
                 // 一定有一个最小值数字
                 min = this.parseDigit();
                 // 如果是}就固定数量，提前结束
@@ -149,12 +149,13 @@ public class RegexParser {
                 if(!this.matchChar(',')) throw new RuntimeException(String.format("预期是,，实际位置%d,字符%s",this.pointer, this.next()));
                 // 继续解析最大值
                 max = this.parseDigit();
+                // 判断值大小是否合理
+                if(max < min) throw new RuntimeException(String.format("预期max值大于等于min值，实际max:%d,min:%d",max,min));
                 if(!this.matchChar('}')) throw new RuntimeException(String.format("预期是}，实际位置%d,字符%s",this.pointer, this.next()));
-                return RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(max).build();
+                return RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(max).modifierType(RepeatExp.RepeatExpType.RANGE).build();
             }
         }
-        min = max = 1;
-        return RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(max).build();
+        return charCollectionExp;
     }
 
     protected RegexExp parseCharCollectionExp() {
@@ -186,7 +187,8 @@ public class RegexParser {
     }
 
     protected List<RegexExp> parseCharRangeExp() {
-        CharExp left = this.parseCharExp();
+        RegexExp left = this.parseCharExp();
+        // 做类型校验
         List<RegexExp> list = new ArrayList<>();
         if(this.matchChar('-')){
             if(this.isEnd()) throw new RuntimeException("解析结束，错误：字符范围结束符-后面没有字符！");
@@ -199,8 +201,16 @@ public class RegexParser {
             }
             // CharRangeExp
             else {
-                CharExp right = this.parseCharExp();
-                CharRangeExp charRangeExp =  CharRangeExp.builder().left(left).right(right).build();
+                RegexExp right = this.parseCharExp();
+                // 做类型检查
+                if(!(left instanceof CharExp && right instanceof CharExp)) throw new RuntimeException(
+                        String.format("预期为CharExp类型，实际left：%s，right：%s", left.treeString(),right.treeString()));
+                CharExp leftCharExp = (CharExp) left;
+                CharExp rightCharExp = (CharExp) right;
+                // 做范围检查
+                if(rightCharExp.getCharValue() < leftCharExp.getCharValue()) throw new RuntimeException(
+                        String.format("预期右字符码值大于左边，实际left:%s,right:%s", leftCharExp.getCharValue(),rightCharExp.getCharValue()));
+                CharRangeExp charRangeExp =  CharRangeExp.builder().left(leftCharExp).right(rightCharExp).build();
                 list.add(charRangeExp);
                 return list;
             }
@@ -209,15 +219,16 @@ public class RegexParser {
         return list;
     }
 
-    protected CharExp parseCharExp() {
+    protected RegexExp parseCharExp() {
         // 如果是转义元字符
-        if(this.matchChar('\\')){
-            if(this.matchChar('d')) return CharExp.builder().charValue('d').build();
-            if(this.matchChar('D')) return CharExp.builder().charValue('D').build();
-            if(this.matchChar('w')) return CharExp.builder().charValue('w').build();
-            if(this.matchChar('W')) return CharExp.builder().charValue('W').build();
-            if(this.matchChar('s')) return CharExp.builder().charValue('s').build();
-            if(this.matchChar('S')) return CharExp.builder().charValue('S').build();
+        if(this.matchChar('\\') || this.matchChar('.')){
+            if(this.matchChar('d')) return MetaExp.builder().metaValue("\\d").build();
+            if(this.matchChar('D')) return MetaExp.builder().metaValue("\\D").build();
+            if(this.matchChar('w')) return MetaExp.builder().metaValue("\\w").build();
+            if(this.matchChar('W')) return MetaExp.builder().metaValue("\\W").build();
+            if(this.matchChar('s')) return MetaExp.builder().metaValue("\\s").build();
+            if(this.matchChar('S')) return MetaExp.builder().metaValue("\\S").build();
+            if(this.matchChar('.')) return MetaExp.builder().metaValue(".").build();
         }
         return CharExp.builder().charValue(this.next()).build();
     }

@@ -6,12 +6,12 @@ import lombok.Data;
 
 @Data
 @Builder
-public class CharExp extends RegexExp {
-    private char charValue;
+public class MetaExp extends RegexExp{
+    private String metaValue;
 
     @Override
     public String treeString() {
-        return String.format("[Char:%s]",this.charValue);
+        return String.format("[Meta:%s]",this.metaValue);
     }
 
     @Override
