@@ -9,6 +9,9 @@ import java.util.List;
  */
 public class ASTVisualizer implements ASTVisitor<Void, ASTVisualizer.PrintContext> {
 
+    private ASTVisualizer(){}
+    public static ASTVisualizer INSTANCE = new ASTVisualizer();
+
     public static String notLastString = "├──"; // 非最后一个兄弟节点
     public static String lastString = "└──"; // 最后一个兄弟节点
     public static String tabStillHasBroPrefix = "│   "; // 还有兄弟节点的节点的子节点前缀
@@ -35,7 +38,7 @@ public class ASTVisualizer implements ASTVisitor<Void, ASTVisualizer.PrintContex
         // 创建打印上下文并传递给根节点信息
         PrintContext printContext = new PrintContext(true,"");
         // 开始访问AST
-        regexExp.accept(new ASTVisualizer(),printContext);
+        regexExp.accept(ASTVisualizer.INSTANCE,printContext);
         return printContext.stringBuilder.toString();
     }
 

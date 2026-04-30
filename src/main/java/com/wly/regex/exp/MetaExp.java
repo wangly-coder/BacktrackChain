@@ -7,6 +7,15 @@ import lombok.Data;
 @Data
 @Builder
 public class MetaExp extends RegexExp{
+    // 支持的元字符
+    public static final String LOW_D = "\\d";
+    public static final String UP_D = "\\D";
+    public static final String LOW_W = "\\w";
+    public static final String UP_W = "\\W";
+    public static final String LOW_S = "\\s";
+    public static final String UP_S = "\\S";
+    public static final String DOT = ".";
+
     private String metaValue;
 
     @Override

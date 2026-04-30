@@ -25,9 +25,28 @@ public class RepeatExp extends RegexExp{
         }
     }
 
+    public RegexExp process(){
+        /*
+        需要将Range类型进一步处理
+        {0,1}变为Question类型,{0,}变为Star类型,{1,}变为Plus类型
+         */
+        if(this.modifierType == RepeatExpType.RANGE){
+            if(this.min == 0){
+                if(this.max==1) this.modifierType = RepeatExpType.QUESTION;
+                else if(this.max==-1) this.modifierType = RepeatExpType.STAR;
+            }
+            else if(this.min == 1 && this.max == -1) this.modifierType = RepeatExpType.PLUS;
+        }
+        return this;
+    }
+
     @Override
     public String treeString() {
-        if(modifierType == RepeatExpType.RANGE) return String.format("[Repeat:{%d,%d}]",min,max);
+        if(modifierType == RepeatExpType.RANGE) {
+            if(min == max) return String.format("[Repeat:{%d}]",min);
+            if(max == -1) return String.format("[Repeat:{%d,}]",min);
+            return String.format("[Repeat:{%d,%d}]",min,max);
+        }
         return String.format("[Repeat:%s]",this.modifierType.modifier);
     }
 

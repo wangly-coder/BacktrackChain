@@ -1,11 +1,14 @@
 package com.wly.regex.exp;
 
 import com.wly.regex.util.ASTVisitor;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@AllArgsConstructor(staticName = "of")
 public class CharExp extends RegexExp {
     private char charValue;
 

@@ -141,18 +141,25 @@ public class RegexParser {
             if (this.matchChar('*')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.STAR).build();
             if (this.matchChar('+')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.PLUS).build();
             if (this.matchChar('{')) {
+                RepeatExp repeatExp;
                 // 一定有一个最小值数字
                 min = this.parseDigit();
                 // 如果是}就固定数量，提前结束
-                if(this.matchChar('}')) return RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(min).build();
+                if(this.matchChar('}')) {
+                    if(min == 0) throw new RuntimeException("无效值，单独一个量词不能为0");
+                    return RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(min).modifierType(RepeatExp.RepeatExpType.RANGE).build();
+                }
                 // 如果不是}，那么一定有一个逗号
                 if(!this.matchChar(',')) throw new RuntimeException(String.format("预期是,，实际位置%d,字符%s",this.pointer, this.next()));
+                // 如果是}那么则有最小值，没有最大值
+                if(this.matchChar('}')) return RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(-1).modifierType(RepeatExp.RepeatExpType.RANGE).build().process();
                 // 继续解析最大值
                 max = this.parseDigit();
                 // 判断值大小是否合理
+                if(min == max && min == 0) throw new RuntimeException("min和max不能同时为0");
                 if(max < min) throw new RuntimeException(String.format("预期max值大于等于min值，实际max:%d,min:%d",max,min));
                 if(!this.matchChar('}')) throw new RuntimeException(String.format("预期是}，实际位置%d,字符%s",this.pointer, this.next()));
-                return RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(max).modifierType(RepeatExp.RepeatExpType.RANGE).build();
+                return RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(max).modifierType(RepeatExp.RepeatExpType.RANGE).build().process();
             }
         }
         return charCollectionExp;
@@ -160,6 +167,8 @@ public class RegexParser {
 
     protected RegexExp parseCharCollectionExp() {
         if(this.matchChar('[')){
+            // 集合表达式中必须有字符
+            if(this.matchChar(']')) throw new RuntimeException("提前结束的集合表达式[]，内容不能为空！");
             boolean isNegative = this.matchChar('^');
             List<RegexExp> charSequenceExp = this.parseCharSequenceExp();
             if(!this.matchChar(']')) throw new RuntimeException(String.format("预期是]，实际位置%d，字符%s", this.pointer, this.next()));

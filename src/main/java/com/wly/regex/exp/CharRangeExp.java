@@ -1,11 +1,14 @@
 package com.wly.regex.exp;
 
 import com.wly.regex.util.ASTVisitor;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import org.checkerframework.checker.units.qual.A;
 
 @Data
 @Builder
+@AllArgsConstructor(staticName = "of")
 public class CharRangeExp extends RegexExp{
     private CharExp left;
     private CharExp right;
