@@ -11,6 +11,11 @@ public class CharEdge extends Edge{
     }
 
     @Override
+    public boolean canMove(char c) {
+        return charValue == c;
+    }
+
+    @Override
     public String printSelf() {
         return String.format(Edge.MOVE+"[%s]"+Edge.MOVE+this.targetState.printSelf()
                 ,this.charValue);

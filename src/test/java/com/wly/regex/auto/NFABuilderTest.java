@@ -1,7 +1,8 @@
 package com.wly.regex.auto;
 
 import com.wly.regex.RegexParser;
-import com.wly.regex.auto.builder.NFABuilder;
+import com.wly.regex.auto.nfa.NFA;
+import com.wly.regex.auto.nfa.NFABuilder;
 import com.wly.regex.auto.edge.Edge;
 import com.wly.regex.auto.edge.EpsilonEdge;
 import com.wly.regex.exp.RegexExp;
@@ -17,7 +18,6 @@ public class NFABuilderTest {
     @BeforeEach
     public void setUp(){
         this.regexParser = new RegexParser();
-        State.resetSharedId(1);
     }
 
     @DisplayName("测试基础字符以及ConcatExp")
@@ -356,6 +356,27 @@ public class NFABuilderTest {
 
                         "S5" + Edge.MOVE + EpsilonEdge.SIGN + Edge.MOVE + "S8\n"+
                         "End:S8\n"
+                ,printResult);
+    }
+
+    @DisplayName("测试点Dot")
+    @Test
+    public void testDot1(){
+        String regex = ".";
+        RegexExp regexExp = this.regexParser.parse(regex);
+        NFA nfa = NFABuilder.INSTANCE.build(regexExp);
+        String printResult = nfa.printSelf();
+        System.out.printf("<========================\n%s========================>\n",printResult);
+        assertEquals("Start:S1\n"+
+                        "S1" + Edge.MOVE + EpsilonEdge.SIGN + Edge.MOVE + "S2\n"+
+                        "S1" + Edge.MOVE + EpsilonEdge.SIGN + Edge.MOVE + "S4\n"+
+
+                        "S2" + Edge.MOVE + "[\u0000,\u0009]" + Edge.MOVE + "S3\n"+
+                        "S4" + Edge.MOVE + "[\u000B,\uFFFF]" + Edge.MOVE + "S5\n"+
+
+                        "S3" + Edge.MOVE + EpsilonEdge.SIGN + Edge.MOVE + "S6\n"+
+                        "S5" + Edge.MOVE + EpsilonEdge.SIGN + Edge.MOVE + "S6\n"+
+                        "End:S6\n"
                 ,printResult);
     }
 

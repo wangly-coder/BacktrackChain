@@ -12,6 +12,11 @@ public class CharRangeEdge extends Edge{
     }
 
     @Override
+    public boolean canMove(char c) {
+        return c >= charRange.left && c <= charRange.right;
+    }
+
+    @Override
     public String printSelf() {
         return String.format(
                 Edge.MOVE+"[%s,%s]"+Edge.MOVE+this.targetState.printSelf(),

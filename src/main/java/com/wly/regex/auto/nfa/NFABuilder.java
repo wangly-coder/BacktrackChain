@@ -1,6 +1,5 @@
-package com.wly.regex.auto.builder;
+package com.wly.regex.auto.nfa;
 
-import com.wly.regex.auto.NFA;
 import com.wly.regex.auto.State;
 import com.wly.regex.auto.SubGraph;
 import com.wly.regex.auto.edge.CharEdge;
@@ -14,19 +13,19 @@ import com.wly.regex.util.MetaUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NFABuilder implements ASTVisitor<SubGraph,Void> {
+public class NFABuilder implements ASTVisitor<SubGraph, NFAContext> {
 
     private NFABuilder(){}
     public static NFABuilder INSTANCE = new NFABuilder();
 
     @Override
-    public SubGraph visit(UnionExp unionExp, Void context) {
-        State startState = State.getNewState();
+    public SubGraph visit(UnionExp unionExp, NFAContext context) {
+        State startState = context.getNewState();
         // 获得左子图
         SubGraph leftGraph = unionExp.getLeft().accept(this,context);
         // 获得右子图
         SubGraph rightGraph = unionExp.getRight().accept(this,context);
-        State endState = State.getNewState();
+        State endState = context.getNewState();
         // 连接左右子图
         startState.addEdge(leftGraph.startEpsilonEdge);
         startState.addEdge(rightGraph.startEpsilonEdge);
@@ -38,7 +37,7 @@ public class NFABuilder implements ASTVisitor<SubGraph,Void> {
     }
 
     @Override
-    public SubGraph visit(ConcatExp concatExp, Void context) {
+    public SubGraph visit(ConcatExp concatExp, NFAContext context) {
         // 获得左子图
         SubGraph leftGraph = concatExp.getLeft().accept(this,context);
         // 获得右子图
@@ -51,7 +50,7 @@ public class NFABuilder implements ASTVisitor<SubGraph,Void> {
     }
 
     @Override
-    public SubGraph visit(RepeatExp repeatExp, Void context) {
+    public SubGraph visit(RepeatExp repeatExp, NFAContext context) {
         // 获得子图
         SubGraph subGraph = repeatExp.getCharCollectionExp().accept(this,context);
         // 拼接子图
@@ -137,7 +136,7 @@ public class NFABuilder implements ASTVisitor<SubGraph,Void> {
     }
 
     @Override
-    public SubGraph visit(CharCollectionExp charCollectionExp, Void context) {
+    public SubGraph visit(CharCollectionExp charCollectionExp, NFAContext context) {
     /*
          在集合表达式中，正则表达式表现的语义为或
          拼接子图的过程难度在于如何转换元字符如\d这样的语言，且需要考虑重复和取反的可能
@@ -157,32 +156,33 @@ public class NFABuilder implements ASTVisitor<SubGraph,Void> {
     }
 
     @Override
-    public SubGraph visit(CharRangeExp charRangeExp, Void context) {
-        State start = State.getNewState();
-        State end = State.getNewState();
+    public SubGraph visit(CharRangeExp charRangeExp, NFAContext context) {
+        State start = context.getNewState();
+        State end = context.getNewState();
         start.addEdge(CharRangeEdge.of(charRangeExp.getLeft().getCharValue(),
                 charRangeExp.getRight().getCharValue(),end));
         return SubGraph.of(start,end);
     }
 
     @Override
-    public SubGraph visit(MetaExp metaExp, Void context) {
+    public SubGraph visit(MetaExp metaExp, NFAContext context) {
         List<CharRange> charRanges = MetaUtil.MetaToCharRangeMap.get(metaExp.getMetaValue());
         // 将区间集合转化为子图
         return SubGraph.buildFromOrRanges(charRanges,this,context);
     }
 
     @Override
-    public SubGraph visit(CharExp charExp, Void context) {
-        State start = State.getNewState();
-        State end = State.getNewState();
+    public SubGraph visit(CharExp charExp, NFAContext context) {
+        State start = context.getNewState();
+        State end = context.getNewState();
         start.addEdge(CharEdge.of(charExp.getCharValue(),end));
         return SubGraph.of(start,end);
     }
 
     public NFA build(RegexExp regexExp){
-        SubGraph subGraph = regexExp.accept(this,null);
+        NFAContext nfaContext = new NFAContext();
+        SubGraph subGraph = regexExp.accept(this,nfaContext);
         subGraph.startEpsilonEdge = null;
-        return new NFA(subGraph.start,subGraph.end);
+        return new NFA(subGraph.start,subGraph.end,nfaContext);
     }
 }

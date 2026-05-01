@@ -9,5 +9,7 @@ public abstract class Edge {
 
     public static final String MOVE = " --> ";
 
+    public abstract boolean canMove(char c);
+
     public abstract String printSelf();
 }
