@@ -229,16 +229,18 @@ public class RegexParser {
     }
 
     protected RegexExp parseCharExp() {
-        // 如果是转义元字符
-        if(this.matchChar('\\')){
+        if(this.matchChar('.')) return MetaExp.builder().metaValue(".").build();
+        // 如果是转义或者元字符
+        else if(this.matchChar('\\')){
+            // 如果是元字符
             if(this.matchChar('d')) return MetaExp.builder().metaValue("\\d").build();
             if(this.matchChar('D')) return MetaExp.builder().metaValue("\\D").build();
             if(this.matchChar('w')) return MetaExp.builder().metaValue("\\w").build();
             if(this.matchChar('W')) return MetaExp.builder().metaValue("\\W").build();
             if(this.matchChar('s')) return MetaExp.builder().metaValue("\\s").build();
             if(this.matchChar('S')) return MetaExp.builder().metaValue("\\S").build();
+            // 剩下的是转义字符，统一交给最后处理
         }
-        else if(this.matchChar('.')) return MetaExp.builder().metaValue(".").build();
         return CharExp.builder().charValue(this.next()).build();
     }
 

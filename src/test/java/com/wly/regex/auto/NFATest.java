@@ -208,6 +208,16 @@ public class NFATest {
         assertEquals(expected,printResult);
     }
 
+    @DisplayName("测试NFA空白符匹配1")
+    @Test
+    public void testMatchBlank1(){
+        RegexExp regexExp = this.regexParser.parse("\\s");
+        NFA nfa = NFABuilder.INSTANCE.build(regexExp);
+        assertTrue(nfa.match(" "));
+        assertFalse(nfa.match("a"));
+        assertTrue(nfa.match("\r"));
+    }
+
     @DisplayName("测试NFA点匹配1")
     @Test
     public void testMatchDot1(){
