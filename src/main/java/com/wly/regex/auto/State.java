@@ -1,13 +1,11 @@
 package com.wly.regex.auto;
 
 import com.wly.regex.auto.edge.Edge;
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@AllArgsConstructor(staticName = "of")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class State {
     @EqualsAndHashCode.Include
@@ -15,6 +13,13 @@ public class State {
     public boolean isStart; // 是否开始状态
     public boolean isEnd; // 是否是结束状态
     public List<Edge> edgeList; // 邻接表
+
+    public State(int id, boolean isStart, boolean isEnd, List<Edge> edgeList) {
+        this.id = id;
+        this.isStart = isStart;
+        this.isEnd = isEnd;
+        this.edgeList = edgeList;
+    }
 
     public static State of(int id){
         return new State(id,false,false,new ArrayList<>());

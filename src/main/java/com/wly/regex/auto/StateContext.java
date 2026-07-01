@@ -38,6 +38,7 @@ public abstract class StateContext {
 
     public State getNewState(){
         State state = this.createState();
+        this.stateNum++;
         this.stateList.add(state);
         this.integerStateHashMap.put(state.id,state);
         return state;

@@ -51,7 +51,7 @@ public class NFATest {
         RegexExp regexExp = this.regexParser.parse(regex);
         NFA nfa = NFABuilder.INSTANCE.build(regexExp);
         State stated = nfa.nfaContext.getState(statedId);
-        Set<State> epsilonClosure = nfa.nfaContext.getEpsilonClosure(stated);
+        Set<State> epsilonClosure = nfa.getEpsilonClosure(stated);
         String printResult = NFATest.statesToString(stated,epsilonClosure);
         System.out.printf("<========================\n%s\n========================>\n",printResult);
         //        assertEquals("Start:S1\n"+
@@ -86,7 +86,7 @@ public class NFATest {
         RegexExp regexExp = this.regexParser.parse(regex);
         NFA nfa = NFABuilder.INSTANCE.build(regexExp);
         State stated = nfa.nfaContext.getState(statedId);
-        Set<State> epsilonClosure = nfa.nfaContext.getEpsilonClosure(stated);
+        Set<State> epsilonClosure = nfa.getEpsilonClosure(stated);
         String printResult = NFATest.statesToString(stated,epsilonClosure);
         System.out.printf("<========================\n%s\n========================>\n",printResult);
 //        assertEquals("Start:S1\n"+
@@ -121,7 +121,7 @@ public class NFATest {
         RegexExp regexExp = this.regexParser.parse(regex);
         NFA nfa = NFABuilder.INSTANCE.build(regexExp);
         State stated = nfa.nfaContext.getState(statedId);
-        Set<State> moveClosure = nfa.nfaContext.move(Sets.newHashSet(stated),moveChar);
+        Set<State> moveClosure = nfa.move(Sets.newHashSet(stated),moveChar);
         String printResult = NFATest.statesToString(stated,moveClosure);
         System.out.printf("<========================\n%s\n========================>\n",printResult);
 //        assertEquals("Start:S1\n"+
@@ -159,7 +159,7 @@ public class NFATest {
         RegexExp regexExp = this.regexParser.parse(regex);
         NFA nfa = NFABuilder.INSTANCE.build(regexExp);
         State stated = nfa.nfaContext.getState(statedId);
-        Set<State> moveClosure = nfa.nfaContext.move(Sets.newHashSet(stated),moveChar);
+        Set<State> moveClosure = nfa.move(Sets.newHashSet(stated),moveChar);
         String printResult = NFATest.statesToString(stated,moveClosure);
         System.out.printf("<========================\n%s\n========================>\n",printResult);
 //        assertEquals("Start:S1\n"+

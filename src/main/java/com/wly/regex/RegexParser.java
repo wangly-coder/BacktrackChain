@@ -1,6 +1,7 @@
 package com.wly.regex;
 
 import com.wly.regex.exp.*;
+import com.wly.regex.util.CounterNestNumChecker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,16 +102,19 @@ public class RegexParser {
     }
 
     /**
-     * 解析字符串化的正则表达式
+     * 解析字符串化的正则表达式，统一方法入口
      * @return AST的正则表达式，对应RegexExp类
      */
     public RegexExp parse() {
-        return this.parseUnionExp();
+        RegexExp regexExp = this.parseUnionExp();
+        // 进行校验
+        CounterNestNumChecker.check(regexExp);
+        return regexExp;
     }
 
     public RegexExp parse(String regexString) {
         this.regexString = regexString;
-        return this.parseUnionExp();
+        return this.parse();
     }
 
 
@@ -133,13 +137,14 @@ public class RegexParser {
     }
 
     protected RegexExp parseRepeatExp() {
+        // TODO 需要增加贪婪匹配
         RegexExp charCollectionExp = this.parseCharCollectionExp();
         // 开始解析修饰符
         int min, max;
         if (!this.isEnd()) {
-            if (this.matchChar('?')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.QUESTION).build();
-            if (this.matchChar('*')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.STAR).build();
-            if (this.matchChar('+')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.PLUS).build();
+            if (this.matchChar('?')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.QUESTION).build().process();
+            if (this.matchChar('*')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.STAR).build().process();
+            if (this.matchChar('+')) return RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.PLUS).build().process();
             if (this.matchChar('{')) {
                 RepeatExp repeatExp;
                 // 一定有一个最小值数字
@@ -147,7 +152,7 @@ public class RegexParser {
                 // 如果是}就固定数量，提前结束
                 if(this.matchChar('}')) {
                     if(min == 0) throw new RuntimeException("无效值，单独一个量词不能为0");
-                    return RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(min).modifierType(RepeatExp.RepeatExpType.RANGE).build();
+                    return RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(min).modifierType(RepeatExp.RepeatExpType.RANGE).build().process();
                 }
                 // 如果不是}，那么一定有一个逗号
                 if(!this.matchChar(',')) throw new RuntimeException(String.format("预期是,，实际位置%d,字符%s",this.pointer, this.next()));

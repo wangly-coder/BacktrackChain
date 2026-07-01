@@ -7,6 +7,8 @@ import com.wly.regex.util.ASTVisitor;
  */
 public abstract class RegexExp {
 
+    public int counterNestNum;
+
     /**
      * 用于提供打印AST的字符串
      * @return

@@ -13,7 +13,7 @@ public class EpsilonEdge extends Edge{
 
     @Override
     public boolean canMove(char c) {
-        return true;
+        return false;
     }
 
     @Override
