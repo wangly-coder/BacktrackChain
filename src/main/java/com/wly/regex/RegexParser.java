@@ -1,7 +1,7 @@
 package com.wly.regex;
 
 import com.wly.regex.exp.*;
-import com.wly.regex.util.CounterNestNumChecker;
+import com.wly.regex.util.NumberNestChecker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,7 +108,7 @@ public class RegexParser {
     public RegexExp parse() {
         RegexExp regexExp = this.parseUnionExp();
         // 进行校验
-        CounterNestNumChecker.check(regexExp);
+        NumberNestChecker.check(regexExp);
         return regexExp;
     }
 

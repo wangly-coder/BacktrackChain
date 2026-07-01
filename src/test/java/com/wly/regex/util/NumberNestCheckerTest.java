@@ -9,7 +9,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CounterNestNumCheckerTest {
+public class NumberNestCheckerTest {
 
     RegexParser regexParser;
 
@@ -21,13 +21,15 @@ public class CounterNestNumCheckerTest {
     @ParameterizedTest
     @CsvSource(delimiterString = "=",value = {
             "(a{1,2}b){2,3}=2",
-            "abc+|a+b|aba=0",
-            "a{2,3}bc+|a+b|ab+a=1"
+            "abc+|a+b|aba=1",
+            "a{2,3}bc+|a+b|ab+a=1",
+            "a?|a+|a*=1",
+            "(a{1,2})?=2"
     })
     public void testNormal(String regex,int expected){
         RegexExp regexExp = this.regexParser.parse(regex);
-        System.out.printf("<========================\n%d\n========================>\n",regexExp.counterNestNum);
-        assertEquals(expected,regexExp.counterNestNum);
+        System.out.printf("<========================\n%d\n========================>\n",regexExp.numberNest);
+        assertEquals(expected,regexExp.numberNest);
     }
 
     @Test
