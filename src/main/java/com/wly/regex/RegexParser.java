@@ -110,6 +110,9 @@ public class RegexParser {
         RegexExp regexExp = this.parseUnionExp();
         // 进行校验
         NumberNestChecker.check(regexExp);
+        // 进行长度校验
+        if(this.pointer != this.regexString.length()) throw new RuntimeException(
+                String.format("正则表达式解析错误：未完成字符全部解析而提前结束。最后的位置：%d",this.pointer));
         return regexExp;
     }
 
