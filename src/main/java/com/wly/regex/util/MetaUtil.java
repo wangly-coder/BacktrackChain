@@ -1,9 +1,8 @@
 package com.wly.regex.util;
 
 import com.google.common.collect.Lists;
-import com.wly.regex.exp.MetaExp;
+import com.wly.regex.ast.exp.MetaExp;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 

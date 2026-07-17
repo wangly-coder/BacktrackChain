@@ -1,7 +1,7 @@
-package com.wly.regex.util;
+package com.wly.regex.ast;
 
 import com.wly.regex.RegexParser;
-import com.wly.regex.exp.RegexExp;
+import com.wly.regex.ast.exp.RegexExp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

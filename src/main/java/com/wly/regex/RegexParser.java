@@ -1,7 +1,7 @@
 package com.wly.regex;
 
-import com.wly.regex.exp.*;
-import com.wly.regex.util.NumberNestChecker;
+import com.wly.regex.ast.exp.*;
+import com.wly.regex.ast.NumberNestChecker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +43,7 @@ import java.util.List;
 
 /**
  * 正则表达式解析器
+ * 有状态的递归下降解析器
  */
 public class RegexParser {
 
@@ -137,7 +138,7 @@ public class RegexParser {
     }
 
     protected RegexExp parseRepeatExp() {
-        // TODO 需要增加贪婪匹配
+        // TODO 需要增加非贪婪匹配
         RegexExp charCollectionExp = this.parseCharCollectionExp();
         // 开始解析修饰符
         int min, max;

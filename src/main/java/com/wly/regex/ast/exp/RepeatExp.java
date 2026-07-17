@@ -1,6 +1,6 @@
-package com.wly.regex.exp;
+package com.wly.regex.ast.exp;
 
-import com.wly.regex.util.ASTVisitor;
+import com.wly.regex.ast.ASTVisitor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -37,7 +37,9 @@ public class RepeatExp extends RegexExp{
         外层是{min,max}，内层是三者其中之一可以优化，如下：
         ?可以优化为{0,max}，*可以优化为*，+可以优化为{min,}
         3.{}之间嵌套不能随意优化，应当保留
+        4. TODO 范围量词要具体考虑是范围还是固定数量，才能进一步优化
          */
+        // 类型变换处理
         if(this.modifierType == RepeatExpType.RANGE){
             if(this.min == 0){
                 if(this.max==1) this.modifierType = RepeatExpType.QUESTION;

@@ -1,9 +1,9 @@
 package com.wly.regex.util;
 
-import com.wly.regex.exp.CharExp;
-import com.wly.regex.exp.CharRangeExp;
-import com.wly.regex.exp.MetaExp;
-import com.wly.regex.exp.RegexExp;
+import com.wly.regex.ast.exp.CharExp;
+import com.wly.regex.ast.exp.CharRangeExp;
+import com.wly.regex.ast.exp.MetaExp;
+import com.wly.regex.ast.exp.RegexExp;
 import lombok.AllArgsConstructor;
 
 import java.util.ArrayList;
@@ -26,26 +26,28 @@ public class CharRange {
     }
 
     /**
-     * 将exp转化为对应的区间
-     * @param regexExp 要转换的表达式
+     * 将exp集合转化为对应的区间集合
+     * @param regexExps 要转换的表达式集合
      * @return 转换后的区间
      */
-    public static List<CharRange> regexExpToCharRange(RegexExp regexExp){
-        if(regexExp == null) return null;
+    public static List<CharRange> regexExpsToCharRanges(List<RegexExp> regexExps){
+        if(regexExps == null) return null;
         List<CharRange> charRanges = new ArrayList<>();
-        if(regexExp instanceof CharExp) {
-            CharExp charExp = (CharExp) regexExp;
-            CharRange charRange = CharRange.of(charExp.getCharValue());
-            charRanges.add(charRange);
-        } else if (regexExp instanceof CharRangeExp) {
-            CharRangeExp charRangeExp = (CharRangeExp) regexExp;
-            charRanges.add(CharRange.of(charRangeExp.getLeft().getCharValue(),charRangeExp.getRight().getCharValue()));
-        } else if (regexExp instanceof MetaExp) {
-            MetaExp metaExp = (MetaExp) regexExp;
-            return MetaUtil.MetaToCharRangeMap.get(metaExp.getMetaValue());
-        } else{
-            throw new RuntimeException("无法转换的边类型");
-        }
+        regexExps.forEach(regexExp -> {
+            if(regexExp instanceof CharExp) {
+                CharExp charExp = (CharExp) regexExp;
+                CharRange charRange = CharRange.of(charExp.getCharValue());
+                charRanges.add(charRange);
+            } else if (regexExp instanceof CharRangeExp) {
+                CharRangeExp charRangeExp = (CharRangeExp) regexExp;
+                charRanges.add(CharRange.of(charRangeExp.getLeft().getCharValue(),charRangeExp.getRight().getCharValue()));
+            } else if (regexExp instanceof MetaExp) {
+                MetaExp metaExp = (MetaExp) regexExp;
+                charRanges.addAll(MetaUtil.MetaToCharRangeMap.get(metaExp.getMetaValue()));
+            } else{
+                throw new RuntimeException("无法转换的边类型");
+            }
+        });
         return charRanges;
     }
 
@@ -54,7 +56,7 @@ public class CharRange {
      * @param charRanges 被转化的区间集合
      * @return 转换后的表达式集合
      */
-    public static List<RegexExp> rangeToRegexExp(List<CharRange> charRanges){
+    public static List<RegexExp> charRangesToRegexExps(List<CharRange> charRanges){
         if(charRanges == null || charRanges.isEmpty()) return null;
         List<RegexExp> result = new ArrayList<>();
         // 区间转化的正则表达式也就CharRangeExp和CharExp两种可能
@@ -151,5 +153,17 @@ public class CharRange {
         right = current.right;
         if(right < Character.MAX_VALUE) result.add(CharRange.of(CharRange.forward(right),Character.MAX_VALUE));
         return result;
+    }
+
+    /**
+     * 将一系列表达式进行区间合并后返回合并后的表达式
+     * @param regexExps 要合并的表达式集合
+     * @param isNegative 是否取区间补集
+     * @return
+     */
+    public static List<RegexExp> mergeRegexExps(List<RegexExp> regexExps,boolean isNegative){
+        List<CharRange> charRanges = regexExpsToCharRanges(regexExps);
+        List<CharRange> mergedCharRanges = isNegative ? negativeMulti(charRanges) : mergeMulti(charRanges);
+        return charRangesToRegexExps(mergedCharRanges);
     }
 }
