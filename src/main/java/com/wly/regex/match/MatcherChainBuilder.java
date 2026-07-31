@@ -7,33 +7,44 @@ import com.wly.regex.util.CharRange;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MatcherChainBuilder implements ASTVisitor<MatcherWrapper,Void> {
+public class MatcherChainBuilder implements ASTVisitor<ChainMatcher, MatcherChainBuilder.MatcherBuilderContext> {
 
     private MatcherChainBuilder(){}
 
     public final static MatcherChainBuilder INSTANCE = new MatcherChainBuilder();
 
-    @Override
-    public MatcherWrapper visit(UnionExp unionExp, Void context) {
-        UnionMatcher unionMatcher = new UnionMatcher();
-        RegexExp leftExp = unionExp.getLeft();
-        MatcherWrapper leftHead = leftExp.accept(this,context);
-        unionMatcher.unionChains.add(leftHead);
-        // 右边路径进行分析，如果依然是union表达式，选择左边部分加入到上述的unionPath中
-        RegexExp rightExp = unionExp.getRight();
-        while(rightExp instanceof UnionExp){
-            leftExp = ((UnionExp) rightExp).getLeft();
-            unionMatcher.unionChains.add(leftExp.accept(this,context));
-            rightExp = ((UnionExp) rightExp).getRight();
-        }
-        // 将最后的最右边路径加入到unionPath中
-        unionMatcher.unionChains.add(rightExp.accept(this,context));
-        return MatcherWrapper.wrap(unionMatcher);
+    protected static class MatcherBuilderContext{
+        public RepeatMatcher preRepeatMatcher;
+        public int nestNumber;
+        public int orderNumber;
+    }
+    
+    public static ChainMatcher build(RegexExp regexExp){
+        return regexExp.accept(INSTANCE,new MatcherBuilderContext());
     }
 
     @Override
-    public MatcherWrapper visit(ConcatExp concatExp, Void context) {
-        MatcherWrapper head = null,cur = null,wrapper;
+    public ChainMatcher visit(UnionExp unionExp, MatcherBuilderContext context) {
+        UnionMatcher unionMatcher = new UnionMatcher();
+        RegexExp leftExp = unionExp.getLeft();
+        ChainMatcher leftHead = leftExp.accept(this,context);
+        unionMatcher.addUnionChainHead(leftHead);
+        // 路径展开，右边路径进行分析，如果依然是union表达式，选择左边部分加入到上述的unionPath中
+        RegexExp rightExp = unionExp.getRight();
+        while(rightExp instanceof UnionExp){
+            leftExp = ((UnionExp) rightExp).getLeft();
+            unionMatcher.addUnionChainHead(leftExp.accept(this,context));
+            rightExp = ((UnionExp) rightExp).getRight();
+        }
+        // 将最后的最右边路径加入到unionPath中
+        unionMatcher.addUnionChainHead((rightExp.accept(this,context)));
+        unionMatcher.preRepeatMatcher = context.preRepeatMatcher;
+        return unionMatcher;
+    }
+
+    @Override
+    public ChainMatcher visit(ConcatExp concatExp, MatcherBuilderContext context) {
+        ChainMatcher head = null,cur = null,wrapper;
         // 合并普通字符
         StringBuilder stringBuilder = new StringBuilder();
         RegexExp leftExp,rightExp;
@@ -102,8 +113,20 @@ public class MatcherChainBuilder implements ASTVisitor<MatcherWrapper,Void> {
     }
 
     @Override
-    public MatcherWrapper visit(RepeatExp repeatExp, Void context) {
-        MatcherWrapper repeatChainHead = repeatExp.getCharCollectionExp().accept(this,context);
+    public ChainMatcher visit(RepeatExp repeatExp, MatcherBuilderContext context) {
+        RepeatMatcher repeatMatcher = new RepeatMatcher();
+        // 设置子节点与父节点关系
+        repeatMatcher.preRepeatMatcher = context.preRepeatMatcher;
+        context.preRepeatMatcher = repeatMatcher;
+        int nest = context.nestNumber++;
+        int order = ++context.orderNumber;
+        // 进入子树
+        context.orderNumber = 0;
+        ChainMatcher repeatChainHead = repeatExp.getCharCollectionExp().accept(this,context);
+        // 退出子树，恢复上下文
+        context.orderNumber = order;
+        context.nestNumber = nest;
+        context.preRepeatMatcher = repeatMatcher.preRepeatMatcher;
         int min,max;
         switch (repeatExp.getModifierType()){
             case QUESTION: min = 0;max=1;break;
@@ -112,47 +135,39 @@ public class MatcherChainBuilder implements ASTVisitor<MatcherWrapper,Void> {
             case RANGE: min = repeatExp.getMin();max=repeatExp.getMax();break;
             default:throw new RuntimeException("不应该出现的异常，无效的量词表达式类型："+repeatExp.getModifierType());
         }
-        return MatcherWrapper.wrap(new RepeatMatcher(repeatChainHead,min,max));
+        String name = String.format("Repeat-%d-%d",nest,order);
+        repeatMatcher.repeatChainHead = repeatChainHead;
+        repeatMatcher.setMin(min);
+        repeatMatcher.max = max;
+        repeatMatcher.name = name;
+        return repeatMatcher;
     }
 
     @Override
-    public MatcherWrapper visit(CharCollectionExp charCollectionExp, Void context) {
+    public ChainMatcher visit(CharCollectionExp charCollectionExp, MatcherBuilderContext context) {
         Matcher matcher;
         List<Matcher> collection = new ArrayList<>();
         // 进行区间合并获得合并后的表达式
         List<RegexExp> mergedRegexExps = CharRange.mergeRegexExps(charCollectionExp.getCharSequenceExp(),charCollectionExp.isNegative());
-        // 合并普通字符
-        StringBuilder stringBuilder = new StringBuilder();
+        // 转化如Matcher加入集合中
         for(RegexExp regexExp : mergedRegexExps){
-            if(regexExp instanceof CharExp) stringBuilder.append(((CharExp) regexExp).getCharValue());
-            else if(regexExp instanceof CharRangeExp){
-                // 将缓冲区的内容转化为StringMatcher
-                if(stringBuilder.length() > 0) {
-                    matcher = new StringMatcher(stringBuilder.toString());
-                    collection.add(matcher);
-                    // 清空缓冲区
-                    stringBuilder.setLength(0);
-                }
-                // 加入CharRangeMatcher
-                collection.add(new CharRangeMatcher((CharRangeExp) regexExp));
-            }
-            else throw new RuntimeException("CharCollectionExp中的表达式集合只能是CharExp或者CharRangeExp类型");
+            collection.add(regexExp.accept(this,context));
         }
         return MatcherWrapper.wrap(new CollectionMatcher(collection));
     }
 
     @Override
-    public MatcherWrapper visit(CharRangeExp charRangeExp, Void context) {
+    public ChainMatcher visit(CharRangeExp charRangeExp, MatcherBuilderContext context) {
         return MatcherWrapper.wrap(new CharRangeMatcher(charRangeExp.getLeft().getCharValue(), charRangeExp.getRight().getCharValue()));
     }
 
     @Override
-    public MatcherWrapper visit(MetaExp metaExp, Void context) {
+    public ChainMatcher visit(MetaExp metaExp, MatcherBuilderContext context) {
         return MatcherWrapper.wrap(new MetaMatcher(metaExp.getMetaValue()));
     }
 
     @Override
-    public MatcherWrapper visit(CharExp charExp, Void context) {
+    public ChainMatcher visit(CharExp charExp, MatcherBuilderContext context) {
         return MatcherWrapper.wrap(new StringMatcher(String.valueOf(charExp.getCharValue())));
     }
 }

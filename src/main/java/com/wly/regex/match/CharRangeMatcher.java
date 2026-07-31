@@ -1,6 +1,7 @@
 package com.wly.regex.match;
 
 import com.wly.regex.ast.exp.CharRangeExp;
+import com.wly.regex.match.back.BackContext;
 
 public class CharRangeMatcher implements Matcher{
     public char left;
@@ -21,4 +22,13 @@ public class CharRangeMatcher implements Matcher{
         return String.format("[CharRange:%s-%s]", this.left, this.right);
     }
 
+    @Override
+    public boolean match(String str, Pointer pointer, BackContext context) {
+        char curChar = str.charAt(pointer.index);
+        if(curChar >= this.left && curChar <= this.right){
+            pointer.index++;
+            return true;
+        }
+        return false;
+    }
 }

@@ -21,6 +21,10 @@ public class CharRange {
         return String.format("[%s,%s]",left,right);
     }
 
+    public boolean isInclude(char c){
+        return c >= left && c <= right;
+    }
+
     public static CharRange of(char c){
         return new CharRange(c,c);
     }

@@ -1,6 +1,5 @@
 package com.wly.regex.ast;
 
-import com.wly.regex.RegexParser;
 import com.wly.regex.ast.exp.RegexExp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,7 +8,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class NumberNestCheckerTest {
+public class NestNumberCheckerTest {
 
     RegexParser regexParser;
 
@@ -28,8 +27,8 @@ public class NumberNestCheckerTest {
     })
     public void testNormal(String regex,int expected){
         RegexExp regexExp = this.regexParser.parse(regex);
-        System.out.printf("<========================\n%d\n========================>\n",regexExp.numberNest);
-        assertEquals(expected,regexExp.numberNest);
+        System.out.printf("<========================\n%d\n========================>\n",regexExp.nestNumber);
+        assertEquals(expected,regexExp.nestNumber);
     }
 
     @Test

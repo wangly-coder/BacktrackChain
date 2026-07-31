@@ -1,7 +1,6 @@
-package com.wly.regex;
+package com.wly.regex.ast;
 
 import com.wly.regex.ast.exp.*;
-import com.wly.regex.ast.NumberNestChecker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -109,7 +108,7 @@ public class RegexParser {
     public RegexExp parse() {
         RegexExp regexExp = this.parseUnionExp();
         // 进行校验
-        NumberNestChecker.check(regexExp);
+        NestNumberChecker.check(regexExp);
         // 进行长度校验
         if(this.pointer != this.regexString.length()) throw new RuntimeException(
                 String.format("正则表达式解析错误：未完成字符全部解析而提前结束。最后的位置：%d",this.pointer));
@@ -123,6 +122,7 @@ public class RegexParser {
 
 
     protected RegexExp parseUnionExp() {
+        // TODO 增加空字符串的写法
         RegexExp left = this.parseConcatExp();
         if (this.matchChar('|')) {
             RegexExp right = this.parseUnionExp();

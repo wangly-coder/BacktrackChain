@@ -11,7 +11,7 @@ public class MatcherChainPrinter {
     public static final String COLLECT_DELIM = ",";
     public static final String UNION_DELIM = " / ";
 
-    public static String printChain(MatcherWrapper head,String delim){
+    public static String printChain(ChainMatcher head,String delim){
         String delimiter = delim == null ? ARROW_DELIM : delim;
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(head.toString());
@@ -22,7 +22,7 @@ public class MatcherChainPrinter {
         return stringBuilder.toString();
     }
 
-    public static String printChain(MatcherWrapper head){
+    public static String printChain(ChainMatcher head){
         return MatcherChainPrinter.printChain(head, ARROW_DELIM);
     }
 
@@ -34,10 +34,10 @@ public class MatcherChainPrinter {
         return stringBuilder.toString();
     }
 
-    public static String printUnionChains(List<MatcherWrapper> unionChains){
+    public static String printUnionChains(List<ChainMatcher> unionChains){
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("[");
-        for(MatcherWrapper chain : unionChains) stringBuilder.append(MatcherChainPrinter.printChain(chain)).append(UNION_DELIM);
+        for(ChainMatcher chain : unionChains) stringBuilder.append(MatcherChainPrinter.printChain(chain)).append(UNION_DELIM);
         stringBuilder.setLength(stringBuilder.length()-UNION_DELIM.length());
         stringBuilder.append("]");
         return stringBuilder.toString();

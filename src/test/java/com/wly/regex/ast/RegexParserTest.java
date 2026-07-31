@@ -1,8 +1,8 @@
-package com.wly.regex;
+package com.wly.regex.ast;
 
 import com.wly.regex.ast.exp.RegexExp;
 import com.wly.regex.ast.exp.RepeatExp;
-import com.wly.regex.ast.ASTVisualizer;
+
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

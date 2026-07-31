@@ -1,21 +1,14 @@
 package com.wly.regex.match;
 
 
-public class MatcherWrapper implements Matcher {
-    public MatcherWrapper next;
-    public Matcher matcher;
+import com.wly.regex.match.back.BackContext;
 
-    public MatcherWrapper() {
-    }
+public class MatcherWrapper extends ChainMatcher {
+    public Matcher matcher;
 
     public MatcherWrapper(Matcher matcher) {
         this.matcher = matcher;
-    }
-
-    public void setNext(MatcherWrapper next){
-        this.next = next;
-        // 针对于UnionMatcher的后置处理
-        if(this.matcher instanceof UnionMatcher) ((UnionMatcher)this.matcher).postProcess(this.next);
+        super.matchEmptyString = matcher.isMatchEmptyString();
     }
 
     public static MatcherWrapper wrap(Matcher matcher){
@@ -25,5 +18,10 @@ public class MatcherWrapper implements Matcher {
     @Override
     public String toString() {
         return this.matcher.toString();
+    }
+
+    @Override
+    public boolean doMatch(String str, Pointer pointer, BackContext context) {
+        return this.matcher.match(str, pointer, context);
     }
 }

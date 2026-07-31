@@ -1,6 +1,7 @@
 package com.wly.regex.match;
 
-import com.wly.regex.RegexParser;
+import com.wly.regex.ast.RegexParser;
+import com.wly.regex.ast.NestNumberChecker;
 import com.wly.regex.ast.exp.RegexExp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,8 +24,8 @@ public class MatcherChainBuilderAndPrinterTest {
     public void test_CharExp(){
         String regexString = "a";
         RegexExp regexExp = regexParser.parse(regexString);
-        MatcherWrapper matcherWrapper = regexExp.accept(MatcherChainBuilder.INSTANCE,null);
-        String matcherString = matcherWrapper.toString();
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
+        String matcherString = chainMatcher.toString();
         System.out.printf("<========================\n%s\n========================>\n",matcherString);
         assertEquals("[String:a]",matcherString);
     }
@@ -34,8 +35,8 @@ public class MatcherChainBuilderAndPrinterTest {
     public void test_MetaExp(){
         String regexString = "\\w";
         RegexExp regexExp = regexParser.parse(regexString);
-        MatcherWrapper matcherWrapper = regexExp.accept(MatcherChainBuilder.INSTANCE,null);
-        String matcherString = matcherWrapper.toString();
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
+        String matcherString = chainMatcher.toString();
         System.out.printf("<========================\n%s\n========================>\n",matcherString);
         assertEquals("[Meta:\\w]",matcherString);
     }
@@ -45,10 +46,21 @@ public class MatcherChainBuilderAndPrinterTest {
     public void test_CharCollectionExp(){
         String regexString = "[ae-fb]";
         RegexExp regexExp = regexParser.parse(regexString);
-        MatcherWrapper matcherWrapper = regexExp.accept(MatcherChainBuilder.INSTANCE,null);
-        String matcherString = matcherWrapper.toString();
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
+        String matcherString = chainMatcher.toString();
         System.out.printf("<========================\n%s\n========================>\n",matcherString);
         assertEquals("[Collection:[[CharRange:a-b],[CharRange:e-f]]]",matcherString);
+    }
+
+    @DisplayName("测试CollectionMatcher是否防止了字符串合并")
+    @Test
+    public void test_CharCollectionExp_2(){
+        String regexString = "[adr-t]";
+        RegexExp regexExp = regexParser.parse(regexString);
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
+        String matcherString = chainMatcher.toString();
+        System.out.printf("<========================\n%s\n========================>\n",matcherString);
+        assertEquals("[Collection:[[String:a],[String:d],[CharRange:r-t]]]",matcherString);
     }
 
     @DisplayName("测试CharCollectionExp(带有^)和MatcherChainPrinter的printCollection方法")
@@ -56,8 +68,8 @@ public class MatcherChainBuilderAndPrinterTest {
     public void test_CharCollectionExp_Negative(){
         String regexString = "[^ae-fb]";
         RegexExp regexExp = regexParser.parse(regexString);
-        MatcherWrapper matcherWrapper = regexExp.accept(MatcherChainBuilder.INSTANCE,null);
-        String matcherString = matcherWrapper.toString();
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
+        String matcherString = chainMatcher.toString();
         System.out.printf("<========================\n%s\n========================>\n",matcherString);
         assertEquals("[Collection:[[CharRange:\u0000-\u0060],[CharRange:c-d],[CharRange:g-\uffff]]]",matcherString);
     }
@@ -67,23 +79,23 @@ public class MatcherChainBuilderAndPrinterTest {
     public void test_ConcatExp_CharExp_CharCollectionExp(){
         String regexString = "abc[0-9a-z]dd";
         RegexExp regexExp = regexParser.parse(regexString);
-        MatcherWrapper matcherWrapper = regexExp.accept(MatcherChainBuilder.INSTANCE,null);
-        String matcherChainString = MatcherChainPrinter.printChain(matcherWrapper);
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
+        String matcherChainString = MatcherChainPrinter.printChain(chainMatcher);
         System.out.printf("<========================\n%s\n========================>\n",matcherChainString);
         assertEquals("[String:abc] -> [Collection:[[CharRange:0-9],[CharRange:a-z]]] -> [String:dd]",matcherChainString);
     }
 
     @DisplayName("测试RepeatExp的?|*|+")
-    @ParameterizedTest
+    @ParameterizedTest(name = "测试{0}")
     @CsvSource(delimiterString = "=" , value = {
-            "a?=[RepeatCount:{min:0,max:1},RepeatChain:{[String:a]}]",
-            "a*=[RepeatCount:{min:0,max:-1},RepeatChain:{[String:a]}]",
-            "a+=[RepeatCount:{min:1,max:-1},RepeatChain:{[String:a]}]"
+            "a?=[Repeat-0-1:[Pre:null,Count:{min:0,max:1},Chain:{[String:a]}]]",
+            "a*=[Repeat-0-1:[Pre:null,Count:{min:0,max:-1},Chain:{[String:a]}]]",
+            "a+=[Repeat-0-1:[Pre:null,Count:{min:1,max:-1},Chain:{[String:a]}]]"
     })
-    public void test_RepeatExp_Not_Range(String regex, String expected){
-        RegexExp regexExp = regexParser.parse(regex);
-        MatcherWrapper matcherWrapper = regexExp.accept(MatcherChainBuilder.INSTANCE,null);
-        String matcherString = matcherWrapper.toString();
+    public void test_RepeatExp_Not_Range(String regexString, String expected){
+        RegexExp regexExp = regexParser.parse(regexString);
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
+        String matcherString = chainMatcher.toString();
         assertEquals(expected,matcherString);
     }
 
@@ -92,10 +104,29 @@ public class MatcherChainBuilderAndPrinterTest {
     public void test_RepeatExp_Range(){
         String regexString = "ac(123){1,2}bc";
         RegexExp regexExp = regexParser.parse(regexString);
-        MatcherWrapper matcherWrapper = regexExp.accept(MatcherChainBuilder.INSTANCE,null);
-        String matcherChainString = MatcherChainPrinter.printChain(matcherWrapper);
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
+        String matcherChainString = MatcherChainPrinter.printChain(chainMatcher);
         System.out.printf("<========================\n%s\n========================>\n",matcherChainString);
-        assertEquals("[String:ac] -> [RepeatCount:{min:1,max:2},RepeatChain:{[String:123]}] -> [String:bc]",matcherChainString);
+        assertEquals("[String:ac] -> [Repeat-0-1:[Pre:null,Count:{min:1,max:2},Chain:{[String:123]}]] -> [String:bc]",matcherChainString);
+    }
+    
+    @DisplayName("测试RepeatExp的嵌套")
+    @Test
+    public void test_RepeatExp_Nest(){
+        NestNumberChecker.MAX_NEST_NUMBER = 3;
+        String regexString = "a(12*(3+4)?){1,2}b";
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexParser.parse(regexString));
+        String matcherChainString = MatcherChainPrinter.printChain(chainMatcher);
+        System.out.printf("<========================\n%s\n========================>\n",matcherChainString);
+        assertEquals("[String:a] -> " +
+                "[Repeat-0-1:[Pre:null,Count:{min:1,max:2}," +
+                "Chain:{" +
+                "[String:1] -> [Repeat-1-1:[Pre:Repeat-0-1,Count:{min:0,max:-1},Chain:{[String:2]}]] -> [Repeat-1-2:[Pre:Repeat-0-1,Count:{min:0,max:1}," +
+                "Chain:{" +
+                "[Repeat-2-1:[Pre:Repeat-1-2,Count:{min:1,max:-1},Chain:{[String:3]}]] -> [String:4]" +
+                "}]]" +
+                "}]]" +
+                " -> [String:b]",matcherChainString);
     }
 
     @DisplayName("测试UnionExp和MatcherChainPrinter的printUnionChains方法")
@@ -103,26 +134,28 @@ public class MatcherChainBuilderAndPrinterTest {
     public void test_UnionExp(){
         String regexString = "a\\w|bc|\\dd";
         RegexExp regexExp = regexParser.parse(regexString);
-        MatcherWrapper matcherWrapper = regexExp.accept(MatcherChainBuilder.INSTANCE,null);
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
         // assert type
-        assertEquals(UnionMatcher.class,matcherWrapper.matcher.getClass());
-        UnionMatcher unionMatcher = (UnionMatcher) matcherWrapper.matcher;
+        assertEquals(UnionMatcher.class,chainMatcher.getClass());
+        UnionMatcher unionMatcher = (UnionMatcher) chainMatcher;
         String matcherString = unionMatcher.toString();
         System.out.printf("<========================\n%s\n========================>\n",matcherString);
-        assertEquals("[Union:[[String:a] -> [Meta:\\w] / [String:bc] / [Meta:\\d] -> [String:d]]]",matcherString);
+        assertEquals("[Union:[Pre:null,Chains:[" +
+                "[String:a] -> [Meta:\\w] / [String:bc] / [Meta:\\d] -> [String:d]" +
+                "]]]",matcherString);
     }
 
-    @DisplayName("测试UnionExp的postProcess方法")
+    @DisplayName("测试RepeatExp里嵌套UnionExp时，UnionMatcher是否有外部RepeatMatcher的引用")
     @Test
-    public void test_UnionExp_PostProcess(){
-        String regexString = "a(11|(22|33)))b";
+    public void test_RepeatExp_Nest_UnionExp(){
+        String regexString = "(a(b|c)d){1,2}";
         RegexExp regexExp = regexParser.parse(regexString);
-        MatcherWrapper matcherWrapper = regexExp.accept(MatcherChainBuilder.INSTANCE,null);
-        String matcherChainString = MatcherChainPrinter.printChain(matcherWrapper);
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
+        String matcherChainString = MatcherChainPrinter.printChain(chainMatcher);
         System.out.printf("<========================\n%s\n========================>\n",matcherChainString);
-        assertEquals("[String:a] -> "+
-                "[Union:[[String:11] -> [String:b] / [String:22] -> [String:b] / [String:33] -> [String:b]]] -> "+
-                "[String:b]",matcherChainString);
+        assertEquals("[Repeat-0-1:[Pre:null,Count:{min:1,max:2},Chain:{" +
+                "[String:a] -> [Union:[Pre:Repeat-0-1,Chains:[[String:b] -> [String:d] / [String:c] -> [String:d]]]] -> [String:d]" +
+                "}]]",matcherChainString);
     }
 
 }

@@ -114,4 +114,18 @@ public class CharRangeTest {
         System.out.printf("<========================\n%s\n========================>\n",printResult);
         assertEquals("[\u0000,1],[3],[I,x],[z,\uFFFF]",printResult);
     }
+
+    @DisplayName("取多区间补集测试-结果为空集")
+    @Test
+    public void negativeMultiTest4(){
+        List<CharRange> testRanges = Lists.newArrayList(
+                CharRange.of('\u0000','a'),
+                CharRange.of('a','\uffff')
+        );
+        List<CharRange> result = CharRange.negativeMulti(testRanges);
+        assertEquals(0,result.size());
+        String printResult = Joiner.on(',').join(result.toArray());
+        System.out.printf("<========================\n%s\n========================>\n",printResult);
+        assertEquals("",printResult);
+    }
 }
