@@ -35,6 +35,6 @@ public class NestNumberCheckerTest {
     public void testException(){
         String regex = "((1(ab{2,3}c)2){1,2}){1,2}";
         Exception exception = assertThrows(RuntimeException.class,() -> this.regexParser.parse(regex));
-        assertEquals("不合法的正则表达式：内部的嵌套计数器个数已经超出MAX_NEST_COUNTER_NUM的数量2",exception.getMessage());
+        assertEquals("不合法的正则表达式：内部的嵌套计数器个数已经超出MAX_NEST_NUMBER的数量2",exception.getMessage());
     }
 }

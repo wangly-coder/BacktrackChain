@@ -1,6 +1,7 @@
 package com.wly.regex.match;
 
 import com.wly.regex.match.back.BackContext;
+import com.wly.regex.match.search.Pointer;
 
 public class StringMatcher implements Matcher{
     public String string;
@@ -21,6 +22,7 @@ public class StringMatcher implements Matcher{
 
     @Override
     public boolean match(String str, Pointer pointer, BackContext context) {
+        if(this.string.isEmpty()) return true;
         int length = this.string.length();
         for(int i=0;i<length;i++){
             // 检查是否越界

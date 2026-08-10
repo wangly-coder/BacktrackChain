@@ -2,6 +2,7 @@ package com.wly.regex.match;
 
 import com.wly.regex.ast.exp.CharRangeExp;
 import com.wly.regex.match.back.BackContext;
+import com.wly.regex.match.search.Pointer;
 
 public class CharRangeMatcher implements Matcher{
     public char left;

@@ -3,60 +3,76 @@ package com.wly.regex.match;
 import com.wly.regex.match.back.BackContext;
 import com.wly.regex.match.back.BackPoint;
 import com.wly.regex.match.back.Backer;
+import com.wly.regex.match.search.Pointer;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class UnionMatcher extends ChainMatcher implements Backer {
-    private List<ChainMatcher> unionChainHeads; // 多个选择链
+    private final List<ChainMatcher> unionChainHeads; // 多个选择链
     public RepeatMatcher preRepeatMatcher; // 外层的RepeatMatcher
+    boolean hasEmptyStringMatcher;
 
-    public UnionMatcher(){
+    public UnionMatcher() {
         this.unionChainHeads = new ArrayList<>();
     }
 
     @Override
-    public void setNext(ChainMatcher chainMatcher){
+    public void setNext(ChainMatcher chainMatcher) {
         this.next = chainMatcher;
-        for(ChainMatcher headMatcher:this.unionChainHeads){
+        for (ChainMatcher headMatcher : this.unionChainHeads) {
             headMatcher.getChainLastMatcher().next = chainMatcher;
         }
     }
 
-    public void addUnionChainHead(ChainMatcher chainMatcher){
+    public void addUnionChainHead(ChainMatcher chainMatcher) {
+        // 剔除重复的空串匹配器，只需要一个即可
+        if (chainMatcher instanceof MatcherWrapper) {
+            MatcherWrapper wrapper = (MatcherWrapper) chainMatcher;
+            // 只有空串的StringMatcher才匹配空串
+            if (wrapper.matchEmptyString) {
+                if (!this.hasEmptyStringMatcher) this.hasEmptyStringMatcher = true;
+                else return;
+            }
+        }
         this.unionChainHeads.add(chainMatcher);
-        // 判断是否匹配空串
-        if(!this.matchEmptyString) this.matchEmptyString = chainMatcher.chainMatchEmptyString();
     }
 
     @Override
     public String toString() {
-        return String.format("[Union:[Pre:%s,Chains:%s]]",this.preRepeatMatcher == null ? "null":this.preRepeatMatcher.name
-                ,MatcherChainPrinter.printUnionChains(this.unionChainHeads));
+        return String.format("[Union:[Pre:%s,Chains:%s]]", this.preRepeatMatcher == null ? "null" : this.preRepeatMatcher.name
+                , MatcherChainPrinter.printUnionChains(this.unionChainHeads));
     }
 
     @Override
     public boolean doMatch(String str, Pointer pointer, BackContext context) {
-        // 核心是选一路走，其他三路作为回溯点保存
-        // 先将剩下的路径保存
-        for(int i=1;i<this.unionChainHeads.size();i++) {
-            // 创建BackPoint
-            BackPoint backPoint = new BackPoint(BackPoint.BPTYPE.UNION,this.unionChainHeads.get(i),pointer.index,this.preRepeatMatcher);
-            // 保存到回溯栈中
+        /*
+            满足规则，A|B|C的匹配顺序为A->A回溯->B->B回溯->C->C回溯
+        */
+        boolean isSuccess = false;
+        int preSize = context.size(),chainSize = this.unionChainHeads.size();
+        int index = pointer.index;
+        int i;
+        for( i = 0; i < chainSize ; i++){
+            ChainMatcher headMatcher = this.unionChainHeads.get(i);
+            if(headMatcher.chainMatch(str, pointer, context,this.next)){
+                isSuccess = true;
+                break;
+            }
+            // 失败则检查回溯点是否增多，有的话退出，否则继续下一条路径
+            if(context.size() > preSize) break;
+        }
+        // 存储剩余路径
+        BackPoint backPoint;
+        for(int j = chainSize-1; j > i ; j--){
+            backPoint = new BackPoint(BackPoint.BPTYPE.UNION, this.unionChainHeads.get(j), index, this.preRepeatMatcher);
             context.store(backPoint);
         }
-        // 走第一条路
-        ChainMatcher first = this.unionChainHeads.get(0);
-        while(first != null && first.match(str, pointer, context)) {
-            first = first.next;
-            // 这里要做截断处理，只处理自己的部分，不能处理UM的next后续匹配链
-            if(first == this.next) return true;
-        }
-        return false;
+        return isSuccess;
     }
 
     @Override
-    public boolean back(String str, Pointer pointer, BackPoint backPoint, BackContext context) {
-        throw new RuntimeException("UnionMatcher.back()是无效的方法！");
+    public boolean back(String str, Pointer pointer,  BackContext context,BackPoint backPoint) {
+        throw new RuntimeException("UnionMatcher.back()是无效的方法，不能调用");
     }
 }

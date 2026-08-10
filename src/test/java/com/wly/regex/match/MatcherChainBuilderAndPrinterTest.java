@@ -1,7 +1,6 @@
 package com.wly.regex.match;
 
 import com.wly.regex.ast.RegexParser;
-import com.wly.regex.ast.NestNumberChecker;
 import com.wly.regex.ast.exp.RegexExp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -88,9 +87,9 @@ public class MatcherChainBuilderAndPrinterTest {
     @DisplayName("测试RepeatExp的?|*|+")
     @ParameterizedTest(name = "测试{0}")
     @CsvSource(delimiterString = "=" , value = {
-            "a?=[Repeat-0-1:[Pre:null,Count:{min:0,max:1},Chain:{[String:a]}]]",
-            "a*=[Repeat-0-1:[Pre:null,Count:{min:0,max:-1},Chain:{[String:a]}]]",
-            "a+=[Repeat-0-1:[Pre:null,Count:{min:1,max:-1},Chain:{[String:a]}]]"
+            "a?=[Repeat-0-1:[Pre:null,Count:{min:0,max:1,greedy:true},Chain:{[String:a]}]]",
+            "a*=[Repeat-0-1:[Pre:null,Count:{min:0,max:-1,greedy:true},Chain:{[String:a]}]]",
+            "a+=[Repeat-0-1:[Pre:null,Count:{min:1,max:-1,greedy:true},Chain:{[String:a]}]]"
     })
     public void test_RepeatExp_Not_Range(String regexString, String expected){
         RegexExp regexExp = regexParser.parse(regexString);
@@ -107,23 +106,23 @@ public class MatcherChainBuilderAndPrinterTest {
         ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
         String matcherChainString = MatcherChainPrinter.printChain(chainMatcher);
         System.out.printf("<========================\n%s\n========================>\n",matcherChainString);
-        assertEquals("[String:ac] -> [Repeat-0-1:[Pre:null,Count:{min:1,max:2},Chain:{[String:123]}]] -> [String:bc]",matcherChainString);
+        assertEquals("[String:ac] -> [Repeat-0-1:[Pre:null,Count:{min:1,max:2,greedy:true},Chain:{[String:123]}]] -> [String:bc]",matcherChainString);
     }
     
     @DisplayName("测试RepeatExp的嵌套")
     @Test
     public void test_RepeatExp_Nest(){
-        NestNumberChecker.MAX_NEST_NUMBER = 3;
+        this.regexParser.closeNestCheck();
         String regexString = "a(12*(3+4)?){1,2}b";
         ChainMatcher chainMatcher = MatcherChainBuilder.build(regexParser.parse(regexString));
         String matcherChainString = MatcherChainPrinter.printChain(chainMatcher);
         System.out.printf("<========================\n%s\n========================>\n",matcherChainString);
         assertEquals("[String:a] -> " +
-                "[Repeat-0-1:[Pre:null,Count:{min:1,max:2}," +
+                "[Repeat-0-1:[Pre:null,Count:{min:1,max:2,greedy:true}," +
                 "Chain:{" +
-                "[String:1] -> [Repeat-1-1:[Pre:Repeat-0-1,Count:{min:0,max:-1},Chain:{[String:2]}]] -> [Repeat-1-2:[Pre:Repeat-0-1,Count:{min:0,max:1}," +
+                "[String:1] -> [Repeat-1-1:[Pre:Repeat-0-1,Count:{min:0,max:-1,greedy:true},Chain:{[String:2]}]] -> [Repeat-1-2:[Pre:Repeat-0-1,Count:{min:0,max:1,greedy:true}," +
                 "Chain:{" +
-                "[Repeat-2-1:[Pre:Repeat-1-2,Count:{min:1,max:-1},Chain:{[String:3]}]] -> [String:4]" +
+                "[Repeat-2-1:[Pre:Repeat-1-2,Count:{min:1,max:-1,greedy:true},Chain:{[String:3]}]] -> [String:4]" +
                 "}]]" +
                 "}]]" +
                 " -> [String:b]",matcherChainString);
@@ -153,9 +152,24 @@ public class MatcherChainBuilderAndPrinterTest {
         ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
         String matcherChainString = MatcherChainPrinter.printChain(chainMatcher);
         System.out.printf("<========================\n%s\n========================>\n",matcherChainString);
-        assertEquals("[Repeat-0-1:[Pre:null,Count:{min:1,max:2},Chain:{" +
+        assertEquals("[Repeat-0-1:[Pre:null,Count:{min:1,max:2,greedy:true},Chain:{" +
                 "[String:a] -> [Union:[Pre:Repeat-0-1,Chains:[[String:b] -> [String:d] / [String:c] -> [String:d]]]] -> [String:d]" +
                 "}]]",matcherChainString);
     }
 
+    @DisplayName("测试^和$限定符，以及它们对应的Matcher")
+    @ParameterizedTest
+    @CsvSource(delimiterString = "=",value = {
+            "^a$=[Start:^] -> [String:a] -> [End:$]",
+            "^a=[Start:^] -> [String:a]",
+            "a$=[String:a] -> [End:$]",
+            "^a|b|c$=[Union:[Pre:null,Chains:[[Start:^] -> [String:a] / [String:b] / [String:c] -> [End:$]]]]",
+    })
+    public void test_limit(String regexString,String expectedString){
+        RegexExp regexExp = regexParser.parse(regexString);
+        ChainMatcher chainMatcher = MatcherChainBuilder.build(regexExp);
+        String matcherChainString = MatcherChainPrinter.printChain(chainMatcher);
+        System.out.printf("<========================\n%s\n========================>\n",matcherChainString);
+        assertEquals(expectedString,matcherChainString);
+    }
 }

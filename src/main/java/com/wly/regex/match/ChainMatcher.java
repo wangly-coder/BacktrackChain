@@ -1,6 +1,7 @@
 package com.wly.regex.match;
 
 import com.wly.regex.match.back.BackContext;
+import com.wly.regex.match.search.Pointer;
 
 public abstract class ChainMatcher implements Matcher{
     public ChainMatcher next;
@@ -12,15 +13,19 @@ public abstract class ChainMatcher implements Matcher{
     }
 
     @Override
+    public boolean isMatchEmptyString() {
+        return this.matchEmptyString;
+    }
+
+    @Override
     public boolean match(String str, Pointer pointer, BackContext context) {
         // 检查是否越界
         if(pointer.index > str.length()) return false;
-        if(pointer.index == str.length()) return this.matchEmptyString;
         return this.doMatch(str, pointer, context);
     }
 
     /**
-     * 链式匹配调用，从当前matcher开始
+     * 从当前matcher开始链式匹配调用
      */
     public boolean chainMatch(String str, Pointer pointer, BackContext context){
         ChainMatcher first = this;
@@ -28,14 +33,17 @@ public abstract class ChainMatcher implements Matcher{
         return first == null;
     }
 
-    public boolean chainMatchEmptyString(){
+    /**
+     *从当前matcher开始链式匹配调用直到遇到指定Matcher停止
+     */
+    public boolean chainMatch(String str, Pointer pointer, BackContext context,ChainMatcher stopMatcher){
         ChainMatcher first = this;
-        while(first != null) {
-            // 但凡有一个不匹配，那么整体匹配链不匹配
-            if(!first.isMatchEmptyString()) return false;
+        while (first.match(str, pointer, context)) {
             first = first.next;
+            // 这里要做截断处理，只处理自己的部分，不能处理UM的next后续匹配链
+            if (first == stopMatcher) return true;
         }
-        return true;
+        return false;
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.wly.regex.match;
 
 import com.wly.regex.match.back.BackContext;
+import com.wly.regex.match.search.Pointer;
 
 public interface Matcher {
 

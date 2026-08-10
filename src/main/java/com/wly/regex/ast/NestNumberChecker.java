@@ -5,7 +5,7 @@ import com.wly.regex.ast.exp.*;
 
 public class NestNumberChecker implements ASTVisitor<Void,Void> {
     
-    public static int MAX_NEST_NUMBER = 2;
+    public final static int MAX_NEST_NUMBER = 2;
     public static final NestNumberChecker INSTANCE = new NestNumberChecker();
     
     private NestNumberChecker(){}
@@ -67,6 +67,7 @@ public class NestNumberChecker implements ASTVisitor<Void,Void> {
     public static void check(RegexExp regexExp){
         regexExp.accept(NestNumberChecker.INSTANCE,null);
         int maxCounterNum = regexExp.nestNumber;
-        if(maxCounterNum > MAX_NEST_NUMBER) throw new RuntimeException("不合法的正则表达式：内部的嵌套计数器个数已经超出MAX_NEST_NUMBER的数量2");
+        if(maxCounterNum > MAX_NEST_NUMBER) throw new RuntimeException(
+                String.format("不合法的正则表达式：内部的嵌套计数器个数已经超出MAX_NEST_NUMBER的数量%d",MAX_NEST_NUMBER));
     }
 }

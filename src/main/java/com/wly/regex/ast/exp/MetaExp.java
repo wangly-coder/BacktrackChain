@@ -20,11 +20,15 @@ public class MetaExp extends RegexExp{
 
     @Override
     public String treeString() {
-        return String.format("[Meta:%s]",this.metaValue);
+        return String.format("[Meta:%s]",this.metaValue.isEmpty() ? "empty" : this.metaValue);
     }
 
     @Override
     public <R, C> R accept(ASTVisitor<R, C> astVisitor, C context) {
         return astVisitor.visit(this,context);
+    }
+
+    public static MetaExp of(String metaValue){
+        return MetaExp.builder().metaValue(metaValue).build();
     }
 }

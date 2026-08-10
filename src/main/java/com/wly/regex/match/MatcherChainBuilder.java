@@ -2,6 +2,8 @@ package com.wly.regex.match;
 
 import com.wly.regex.ast.ASTVisitor;
 import com.wly.regex.ast.exp.*;
+import com.wly.regex.match.control.EndMatcher;
+import com.wly.regex.match.control.StartMatcher;
 import com.wly.regex.util.CharRange;
 
 import java.util.ArrayList;
@@ -139,13 +141,13 @@ public class MatcherChainBuilder implements ASTVisitor<ChainMatcher, MatcherChai
         repeatMatcher.repeatChainHead = repeatChainHead;
         repeatMatcher.setMin(min);
         repeatMatcher.max = max;
+        repeatMatcher.setGreedy(repeatExp.isGreedy());
         repeatMatcher.name = name;
         return repeatMatcher;
     }
 
     @Override
     public ChainMatcher visit(CharCollectionExp charCollectionExp, MatcherBuilderContext context) {
-        Matcher matcher;
         List<Matcher> collection = new ArrayList<>();
         // 进行区间合并获得合并后的表达式
         List<RegexExp> mergedRegexExps = CharRange.mergeRegexExps(charCollectionExp.getCharSequenceExp(),charCollectionExp.isNegative());
@@ -163,6 +165,11 @@ public class MatcherChainBuilder implements ASTVisitor<ChainMatcher, MatcherChai
 
     @Override
     public ChainMatcher visit(MetaExp metaExp, MatcherBuilderContext context) {
+        // 对限定符^$做处理
+        if("^".equals(metaExp.getMetaValue())) return new StartMatcher();
+        if("$".equals(metaExp.getMetaValue())) return new EndMatcher();
+        // 如果是UnionExp里产生的空字符串MetaExp，那么返回StringMatcher
+        if("".equals(metaExp.getMetaValue())) return MatcherWrapper.wrap(new StringMatcher(""));
         return MatcherWrapper.wrap(new MetaMatcher(metaExp.getMetaValue()));
     }
 
