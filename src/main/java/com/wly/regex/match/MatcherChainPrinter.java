@@ -1,5 +1,8 @@
 package com.wly.regex.match;
 
+import com.wly.regex.match.matcher.ChainMatcher;
+import com.wly.regex.match.matcher.Matcher;
+
 import java.util.List;
 
 /**
@@ -11,7 +14,7 @@ public class MatcherChainPrinter {
     public static final String COLLECT_DELIM = ",";
     public static final String UNION_DELIM = " / ";
 
-    public static String printChain(ChainMatcher head,String delim){
+    public static String printChain(ChainMatcher head, String delim){
         String delimiter = delim == null ? ARROW_DELIM : delim;
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(head.toString());

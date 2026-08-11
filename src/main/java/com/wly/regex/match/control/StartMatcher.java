@@ -1,8 +1,8 @@
 package com.wly.regex.match.control;
 
-import com.wly.regex.match.ChainMatcher;
+import com.wly.regex.match.matcher.ChainMatcher;
 import com.wly.regex.match.back.BackContext;
-import com.wly.regex.match.search.Pointer;
+import com.wly.regex.match.Pointer;
 
 /**
  * 限定符^的对应匹配器

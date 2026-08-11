@@ -1,9 +1,10 @@
-package com.wly.regex.match;
+package com.wly.regex.match.matcher;
 
+import com.wly.regex.match.MatcherChainPrinter;
 import com.wly.regex.match.back.BackContext;
 import com.wly.regex.match.back.BackPoint;
 import com.wly.regex.match.back.Backer;
-import com.wly.regex.match.search.Pointer;
+import com.wly.regex.match.Pointer;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -17,7 +18,7 @@ public class RepeatMatcher extends ChainMatcher implements Backer {
     public boolean greedy;
     public int count; // 当前计数值
     public RepeatMatcher preRepeatMatcher;
-    String name; // Repeat-m-n形式，m表示外层有几个RM，n表示是该层第几个RM
+    public String name; // Repeat-m-n形式，m表示外层有几个RM，n表示是该层第几个RM
 
     // 防止匹配-回溯循环问题
     // 无法匹配的下标，以该下标为起点的子串无法正常匹配一次
@@ -50,7 +51,7 @@ public class RepeatMatcher extends ChainMatcher implements Backer {
     @Override
     public String toString() {
         return String.format("[%s:[Pre:%s,Count:{min:%d,max:%d,greedy:%s},Chain:{%s}]]",this.name,this.preRepeatMatcher == null ? "null" : this.preRepeatMatcher.name,
-                this.min,this.max,this.greedy,MatcherChainPrinter.printChain(this.repeatChainHead));
+                this.min,this.max,this.greedy, MatcherChainPrinter.printChain(this.repeatChainHead));
     }
 
     // 创建回溯点
@@ -60,7 +61,7 @@ public class RepeatMatcher extends ChainMatcher implements Backer {
     }
 
     // 记录回溯点
-    public void setBackPoint(int index,BackContext context){
+    public void setBackPoint(int index, BackContext context){
         BackPoint backPoint = this.createBackPoint(index);
         context.store(backPoint);
     }

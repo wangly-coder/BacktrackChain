@@ -1,4 +1,4 @@
-package com.wly.regex.match.search;
+package com.wly.regex.match;
 
 public class Pointer {
     public int preIndex;

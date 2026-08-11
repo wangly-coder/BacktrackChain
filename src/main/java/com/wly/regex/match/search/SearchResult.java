@@ -1,6 +1,7 @@
 package com.wly.regex.match.search;
 
 import com.wly.regex.RegexMatcher;
+import com.wly.regex.match.Pointer;
 
 public class SearchResult {
     private final RegexMatcher regexMatcher;

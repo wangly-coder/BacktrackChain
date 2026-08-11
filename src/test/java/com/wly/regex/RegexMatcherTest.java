@@ -9,19 +9,23 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RegexMatcherTest {
+
+}
+
+class MatchAllTest {
     RegexParser regexParser;
 
     @BeforeEach
-    public void init(){
+    public void init() {
         this.regexParser = new RegexParser();
     }
 
     @DisplayName("测试matchAll方法-非回溯的Matcher")
     @ParameterizedTest
-    @CsvSource(delimiterString = "=",value = {
+    @CsvSource(delimiterString = "=", value = {
             "abc=abc=true",
             "abc=abcd=false",
             "a\\wb=aab=true",
@@ -30,15 +34,15 @@ public class RegexMatcherTest {
             "a[\\dd-g]b=abb=false",
             "a[\\dd-g]b=agb=true"
     })
-    public void test_matchAll_no_back(String regex, String str,boolean expected){
+    public void test_matchAll_no_back(String regex, String str, boolean expected) {
         RegexMatcher regexMatcher = new RegexMatcher(regex);
         boolean isAllMatch = regexMatcher.matchAll(str);
-        assertEquals(expected,isAllMatch);
+        assertEquals(expected, isAllMatch);
     }
 
     @DisplayName("测试matchAll方法-非嵌套的回溯的Matcher")
     @ParameterizedTest
-    @CsvSource(delimiterString = "=",value = {
+    @CsvSource(delimiterString = "=", value = {
             "a|b|c|d=a=true",
             "a|b|c|d=b=true",
             "a|b|c|d=c=true",
@@ -60,16 +64,16 @@ public class RegexMatcherTest {
             "a|b|=empty=true",
             "1(a|b|)2=12=true"
     })
-    public void test_matchAll_noNest_back(String regex, String str,boolean expected){
-        if("empty".equals(str)) str = "";
+    public void test_matchAll_noNest_back(String regex, String str, boolean expected) {
+        if ("empty".equals(str)) str = "";
         RegexMatcher regexMatcher = new RegexMatcher(regex);
         boolean isAllMatch = regexMatcher.matchAll(str);
-        assertEquals(expected,isAllMatch);
+        assertEquals(expected, isAllMatch);
     }
 
     @DisplayName("测试matchAll方法-嵌套回溯的Matcher")
     @ParameterizedTest
-    @CsvSource(delimiterString = "=",value = {
+    @CsvSource(delimiterString = "=", value = {
             "a|b|1(2|3)4|c=b=true",
             "a|b|1(2|3)4|c=124=true",
             "a|b|1(2|3)4|c=134=true",
@@ -89,13 +93,16 @@ public class RegexMatcherTest {
             "(a|b+(12|3?4)+c)+d=abb1234124cb4cd=true",
             "(1(ab+c)?2)+=1abbc2=true"
     })
-    public void test_matchAll_nest_back(String regex, String str,boolean expected){
+    public void test_matchAll_nest_back(String regex, String str, boolean expected) {
         this.regexParser.closeNestCheck();
         this.regexParser.setRegexString(regex);
         RegexMatcher regexMatcher = new RegexMatcher(this.regexParser);
         boolean isAllMatch = regexMatcher.matchAll(str);
-        assertEquals(expected,isAllMatch);
+        assertEquals(expected, isAllMatch);
     }
+}
+
+class MatchAndSearchTest {
 
     @DisplayName("测试重载的所有search和searchAll方法-贪婪匹配")
     @ParameterizedTest

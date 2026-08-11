@@ -1,8 +1,8 @@
-package com.wly.regex.match;
+package com.wly.regex.match.matcher;
 
 import com.wly.regex.ast.exp.CharRangeExp;
 import com.wly.regex.match.back.BackContext;
-import com.wly.regex.match.search.Pointer;
+import com.wly.regex.match.Pointer;
 
 public class CharRangeMatcher implements Matcher{
     public char left;

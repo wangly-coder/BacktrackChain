@@ -1,7 +1,8 @@
-package com.wly.regex.match;
+package com.wly.regex.match.matcher;
 
+import com.wly.regex.match.MatcherChainPrinter;
 import com.wly.regex.match.back.BackContext;
-import com.wly.regex.match.search.Pointer;
+import com.wly.regex.match.Pointer;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ public class CollectionMatcher implements Matcher{
 
     @Override
     public String toString() {
-        return String.format("[Collection:%s]",MatcherChainPrinter.printCollection(this.collection));
+        return String.format("[Collection:%s]", MatcherChainPrinter.printCollection(this.collection));
     }
 
     @Override

@@ -1,7 +1,7 @@
-package com.wly.regex.match;
+package com.wly.regex.match.matcher;
 
 import com.wly.regex.match.back.BackContext;
-import com.wly.regex.match.search.Pointer;
+import com.wly.regex.match.Pointer;
 
 public class StringMatcher implements Matcher{
     public String string;
