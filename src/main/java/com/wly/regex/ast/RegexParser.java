@@ -1,15 +1,15 @@
 package com.wly.regex.ast;
 
 import com.wly.regex.ast.exp.*;
-import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * <RegexExp> ::= <UnionExp>
  *
  * <UnionExp> ::= <ConcatExp> | <UnionExp>
+ * <UnionExp> ::= <ConcatExp> |
+ * <UnionExp> ::= | <ConcatExp>
  * <UnionExp> ::= <ConcatExp>
  *
  * FOLLOW(<ConcatExp>) = {end，|,)}
@@ -36,9 +36,11 @@ import java.util.List;
  *
  * <CharExp> ::= <BasicChar>
  * <CharExp> ::= <MetaChar>
+ * <CharExp> ::= <GroupReference>
  *
  * <BasicChar> ::= 0x0000-0xFFFF // 内部使用Char类型，表示范围是0x00-0xFFFF，也能够表示绝大多数中文
  * <MetaChar> ::= \d | \w | \s  | \\ // 以及他们的大小写，除了富含语义的单个字符外还包括转义字符
+ * <GroupReference> ::= \num (num为正整数集合）
  */
 
 /**
@@ -53,9 +55,11 @@ public class RegexParser {
     // []中的转义字符，其他的字符都当作字面量使用
     public static final String COLLECTION_ESCAPE_CHAR_SEQUENCE = "^-[]";
 
-    // 对应^$限定符
-    public boolean hasStartLimit;
-    public boolean hasEndLimit;
+    // 要解析的正则表达式字符串
+    protected String regexString;
+
+    // 记录当前指向的字符位置
+    protected int cursor;
 
     // 是否进入了[]解析环境
     protected boolean isInCollection;
@@ -63,12 +67,14 @@ public class RegexParser {
     // 是否关闭RepeatExp的嵌套检查
     protected boolean closeNestCheck;
 
-    // 要解析的正则表达式字符串
-    @Setter
-    protected String regexString;
+    // 对应^$限定符
+    public boolean hasStartLimit;
+    public boolean hasEndLimit;
 
-    // 记录当前指向的字符位置
-    protected int pointer;
+    // 捕获组与引用相关上下文
+    // 组数量
+    public int groupNumber;
+    public LinkedHashMap<String,Integer> groupNameToIdMap;
 
     public RegexParser(){}
 
@@ -76,19 +82,28 @@ public class RegexParser {
         this.regexString = regexString;
     }
 
+    public RegexParser(String regexString,boolean closeNestCheck){
+        this.regexString = regexString;
+        this.closeNestCheck = closeNestCheck;
+    }
+
+    public String getProtoString(int startIndex){
+        return this.regexString.substring(startIndex,this.cursor);
+    }
+
     /**
      * 是否解析结束
      */
     protected boolean isEnd(){
-        return this.pointer >= this.regexString.length();
+        return this.cursor >= this.regexString.length();
     }
 
     /**
      * 匹配消耗当前字符并指向下一个字符
      */
     protected boolean matchChar(char target){
-        if(this.isEnd() || this.regexString.charAt(pointer) != target) return false;
-        this.pointer++;
+        if(this.isEnd() || this.regexString.charAt(cursor) != target) return false;
+        this.cursor++;
         return true;
     }
 
@@ -97,30 +112,56 @@ public class RegexParser {
      */
     protected char next(){
         if (this.isEnd()) throw new IndexOutOfBoundsException("正则表达式解析结束，无法获取当前字符");
-        return this.regexString.charAt(this.pointer++);
+        return this.regexString.charAt(this.cursor++);
     }
 
     /**
      * 判断给定的target字符串中是否有当前的指针指向的字符
      */
     protected boolean includeChar(String target){
-        return !this.isEnd() && target.indexOf(this.regexString.charAt(this.pointer)) > -1;
+        return !this.isEnd() && target.indexOf(this.regexString.charAt(this.cursor)) > -1;
+    }
+
+    // 关闭量词嵌套检查
+    public void closeNestCheck(){
+        this.closeNestCheck = true;
     }
 
     /**
      * 解析从当前指针开始的第一个数字
      */
     protected int parseDigit(){
-        int initialPos = this.pointer;
-        char next = this.next();
-        while(next >= 48 && next <= 57){next = this.next();}
-        // 如果不是数字那么返回0
-        if (this.pointer - initialPos <= 1) throw new RuntimeException(String.format("未能解析出数字，位置%d,符号%s",this.pointer, next));
-        return Integer.parseInt(this.regexString.substring(initialPos, --this.pointer));
+        int initialPos = this.cursor,next;
+        while(!this.isEnd() && (next = this.regexString.charAt(this.cursor)) >= 48 && next <= 57){
+            this.cursor++;
+        }
+        return Integer.parseInt(this.regexString.substring(initialPos, this.cursor));
     }
 
-    public void closeNestCheck(){
-        this.closeNestCheck = true;
+    /**
+     * 解析捕获组的名字
+     */
+    protected String parseGroupName(){
+        int curPos = this.cursor;
+        while(!this.isEnd() && this.regexString.charAt(this.cursor) != '>'){
+            this.cursor++;
+        }
+        if(curPos == this.cursor) throw new RuntimeException(String.format("捕获组名称不能为空，索引位置为：%d",curPos));
+        return this.regexString.substring(curPos, this.cursor);
+    }
+
+    /**
+     * 重置解析器
+     */
+    public void reset(){
+        this.cursor = 0;
+        this.regexString = null;
+        this.isInCollection = false;
+        this.closeNestCheck = false;
+        this.hasStartLimit = false;
+        this.hasEndLimit = false;
+        this.groupNumber = 0;
+        this.groupNameToIdMap = null;
     }
 
     /**
@@ -133,38 +174,41 @@ public class RegexParser {
         if(!closeNestCheck) NestNumberChecker.check(regexExp);
         else closeNestCheck = false;
         // 进行长度校验
-        if(this.pointer != this.regexString.length()) throw new RuntimeException(
-                String.format("正则表达式解析错误：未完成字符全部解析而提前结束。最后的位置：%d",this.pointer));
+        if(this.cursor != this.regexString.length()) throw new RuntimeException(
+                String.format("正则表达式解析错误：未完成字符全部解析而提前结束。最后的位置：%d",this.cursor));
         return regexExp;
     }
 
     public RegexExp parse(String regexString) {
-        if(this.regexString != null) throw new RuntimeException("解析器已经有需要解析的字符串了，不能重新赋值");
+        this.reset();
         this.regexString = regexString;
         return this.parse();
     }
 
-    public static RegexExp parseRegexString(String regexString){
-        return new RegexParser(regexString).parse();
+    public RegexExp parse(String regexString,boolean closeNestCheck) {
+        this.reset();
+        this.closeNestCheck = closeNestCheck;
+        this.regexString = regexString;
+        return this.parse();
     }
-
 
     protected RegexExp parseUnionExp() {
         RegexExp left,right;
+        int startIndex = this.cursor;
         // 允许空字符串的写法
         if(this.matchChar('|')) {
             left = MetaExp.of("");
             // 只有|这种写法，不被允许，任何|至少一侧有一个非空表达式
             if(this.includeChar("|") || this.isEnd()) throw new RuntimeException("不被允许的UnionExp写法：|，至少一侧有一个非空表达式");
             right = this.parseUnionExp();
-            return UnionExp.builder().left(left).right(right).build();
+            return UnionExp.of(this.getProtoString(startIndex),left,right);
         }
         left = this.parseConcatExp();
         if(this.matchChar('|')) {
             // 右侧为空的情况
             if(this.isEnd() || this.includeChar(")")) right = MetaExp.of("");
             else right = this.parseUnionExp();
-            return UnionExp.builder().left(left).right(right).build();
+            return UnionExp.of(this.getProtoString(startIndex),left,right);
         }
         return left;
     }
@@ -173,7 +217,7 @@ public class RegexParser {
         RegexExp left = this.parseRepeatExp();
         if (!this.isEnd() && !this.includeChar("|)")) {
             RegexExp right = this.parseConcatExp();
-            return ConcatExp.builder().left(left).right(right).build();
+            return ConcatExp.of(left,right);
         }
         return left;
     }
@@ -184,23 +228,24 @@ public class RegexParser {
         int min, max;
         RepeatExp repeatExp = null;
         if (!this.isEnd()) {
-            if (this.matchChar('?')) repeatExp = RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.QUESTION).build();
-            else if (this.matchChar('*')) repeatExp = RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.STAR).build();
-            else if (this.matchChar('+')) repeatExp = RepeatExp.builder().charCollectionExp(charCollectionExp).modifierType(RepeatExp.RepeatExpType.PLUS).build();
+            if (this.matchChar('?')) repeatExp = RepeatExp.of(charCollectionExp,RepeatExp.RepeatExpType.QUESTION);
+            else if (this.matchChar('*')) repeatExp = RepeatExp.of(charCollectionExp,RepeatExp.RepeatExpType.STAR);
+            else if (this.matchChar('+')) repeatExp = RepeatExp.of(charCollectionExp,RepeatExp.RepeatExpType.PLUS);
             else if (this.matchChar('{')) {
                 // 一定有一个最小值数字
                 min = this.parseDigit();
                 // 如果是}就固定数量，提前结束
-                if(this.matchChar('}')) {
+                if(this.matchChar('}'))
+                {
                     if(min == 0) throw new RuntimeException("无效值，单独一个量词不能为0");
-                    repeatExp = RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(min).modifierType(RepeatExp.RepeatExpType.RANGE).build().process();
+                    repeatExp = RepeatExp.of(charCollectionExp,min,min,RepeatExp.RepeatExpType.RANGE);;
                 }
                 else
                 {
                     // 如果不是}，那么一定有一个逗号
-                    if(!this.matchChar(',')) throw new RuntimeException(String.format("预期是,，实际位置%d,字符%s",this.pointer, this.next()));
+                    if(!this.matchChar(',')) throw new RuntimeException(String.format("预期是,，实际位置%d,字符%s",this.cursor, this.next()));
                     // 如果是}那么则有最小值，没有最大值
-                    if(this.matchChar('}')) repeatExp = RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(-1).modifierType(RepeatExp.RepeatExpType.RANGE).build();
+                    if(this.matchChar('}')) repeatExp = RepeatExp.of(charCollectionExp,min,-1,RepeatExp.RepeatExpType.RANGE);
                     else
                     {
                         // 继续解析最大值
@@ -208,37 +253,65 @@ public class RegexParser {
                         // 判断值大小是否合理
                         if(min == max && min == 0) throw new RuntimeException("min和max不能同时为0");
                         else if(max < min) throw new RuntimeException(String.format("预期max值大于等于min值，实际max:%d,min:%d",max,min));
-                        if(!this.matchChar('}')) throw new RuntimeException(String.format("预期是}，实际位置%d,字符%s",this.pointer, this.next()));
-                        repeatExp = RepeatExp.builder().charCollectionExp(charCollectionExp).min(min).max(max).modifierType(RepeatExp.RepeatExpType.RANGE).build();
+                        if(!this.matchChar('}')) throw new RuntimeException(String.format("预期是}，实际位置%d,字符%s",this.cursor, this.next()));
+                        repeatExp = RepeatExp.of(charCollectionExp,min,max,RepeatExp.RepeatExpType.RANGE);
                     }
                 }
             }
         }
         if(repeatExp == null) return charCollectionExp;
         // 如果repeatExp不为空，那么就判断是否是非贪婪匹配
-        if(this.matchChar('?')) repeatExp.setGreedy(false);
+        if(this.matchChar('?')) repeatExp.greedy = false;
         return repeatExp.process();
     }
 
     protected RegexExp parseCharCollectionExp() {
+        int startIndex = this.cursor;
         if(this.matchChar('[')){
             this.isInCollection = true;
             // 集合表达式中必须有字符
             if(this.matchChar(']')) throw new RuntimeException("提前结束的集合表达式[]，内容不能为空！");
             boolean isNegative = this.matchChar('^');
             List<RegexExp> charSequenceExp = this.parseCharSequenceExp();
-            if(!this.matchChar(']')) throw new RuntimeException(String.format("预期是]，实际位置%d，字符%s", this.pointer, this.next()));
+            if(!this.matchChar(']')) throw new RuntimeException(String.format("预期是]，实际位置%d，字符%s", this.cursor, this.next()));
             this.isInCollection = false;
-            return CharCollectionExp.builder().charSequenceExp(charSequenceExp).negative(isNegative).build();
+            return CharCollectionExp.of(this.getProtoString(startIndex),charSequenceExp,isNegative);
         }
         return this.parseCharGroupExp();
     }
 
     protected RegexExp parseCharGroupExp() {
         if(this.matchChar('(')){
-            RegexExp unionExp = this.parseUnionExp();
-            if(!this.matchChar(')')) throw new RuntimeException(String.format("预期是)，实际位置%d，字符%s", this.pointer, this.next()));
-            return unionExp;
+            RegexExp groupExp;
+            if(this.matchChar('?')){
+                // 非捕获组
+                if(this.matchChar(':')) groupExp = this.parseUnionExp();
+                // 具名捕获组
+                else if(this.matchChar('<')) {
+                    // 解析捕获组的名字
+                    String groupName = this.parseGroupName();
+                    // 不能以数字开头，只能是大小写字母
+                    char firstChar = groupName.charAt(0);
+                    if((firstChar < 'A' || firstChar > 'z') || (firstChar > 'Z' && firstChar < 'a'))
+                        throw new RuntimeException(String.format("捕获组名称%s不能以数字开头，开头只能是字母大小写",groupName));
+                    if(this.groupNameToIdMap == null) groupNameToIdMap = new LinkedHashMap<>();
+                    else if(this.groupNameToIdMap.get(groupName) != null) throw new RuntimeException("重复的捕获组名称"+groupName);
+                    if(!this.matchChar('>')) throw new RuntimeException(String.format("具名捕获组，预期是>，实际位置%d，字符%s", this.cursor, this.next()));
+                    int groupId = ++this.groupNumber;
+                    // 加入组名->id的映射表中
+                    this.groupNameToIdMap.put(groupName,groupId);
+                    groupExp = this.parseUnionExp();
+                    groupExp = GroupExp.of(groupId,groupExp);
+                }
+                else throw new RuntimeException(String.format("非捕获组或者具名捕获组，预期是:或者<，实际位置%d，字符%s", this.cursor, this.next()));
+            }
+            else{
+                int groupId = ++this.groupNumber;
+                groupExp = this.parseUnionExp();
+                groupExp = GroupExp.of(groupId,groupExp);
+            }
+            if(!this.matchChar(')')) throw new RuntimeException(String.format("预期是)，实际位置%d，字符%s", this.cursor, this.next()));
+            return groupExp;
         }
         return this.parseCharExp();
     }
@@ -260,10 +333,9 @@ public class RegexParser {
             if(this.isEnd()) throw new RuntimeException("解析结束，错误：字符范围结束符-后面没有字符！");
             // a-] 这种情况，连续两个CharExp
             if(this.includeChar("]")){
-                CharExp charExp = CharExp.builder().charValue('-').build();
+                CharExp charExp = CharExp.of('-');
                 list.add(left);
                 list.add(charExp);
-                return list;
             }
             // CharRangeExp
             else {
@@ -274,18 +346,18 @@ public class RegexParser {
                 CharExp leftCharExp = (CharExp) left;
                 CharExp rightCharExp = (CharExp) right;
                 // 做类别检查,必须同是字母或者数字
-                char leftValue = leftCharExp.getCharValue();
-                char rightValue = rightCharExp.getCharValue();
+                char leftValue = leftCharExp.charValue;
+                char rightValue = rightCharExp.charValue;
                 if(!((leftValue >= '0' && leftValue <= '9' && rightValue >= '0' && rightValue <= '9')
                         || (leftValue >= 'A' && leftValue <= 'z' && rightValue  >= 'A' && rightValue <= 'z')))
                     throw new RuntimeException(String.format("预期为数字或者字母，实际left:%s,right:%s", leftValue,rightValue));
                 // 做范围检查
                 if(leftValue >= rightValue) throw new RuntimeException(
                         String.format("预期右字符码值大于左边，实际left:%s,right:%s", leftValue,rightValue));
-                CharRangeExp charRangeExp =  CharRangeExp.builder().left(leftCharExp).right(rightCharExp).build();
+                CharRangeExp charRangeExp =  CharRangeExp.of(leftCharExp,rightCharExp);
                 list.add(charRangeExp);
-                return list;
             }
+            return list;
         }
         list.add(left);
         return list;
@@ -293,33 +365,49 @@ public class RegexParser {
 
     protected RegexExp parseCharExp() {
         // 针对^$的特殊处理
-        if(this.pointer == 0 && this.matchChar('^')) {
+        if(this.cursor == 0 && this.matchChar('^')) {
             this.hasStartLimit = true;
-            return MetaExp.builder().metaValue("^").build();
+            return MetaExp.of("^");
         }
-        if(this.pointer == this.regexString.length()-1 && this.matchChar('$')) {
+        if(this.cursor == this.regexString.length()-1 && this.matchChar('$')) {
             this.hasEndLimit = true;
-            return MetaExp.builder().metaValue("$").build();
+            return MetaExp.of("$");
         }
         // 不在[]解析中，点被看作元字符，否则就是普通字符
-        if(this.matchChar('.')) return this.isInCollection ? CharExp.of('.') : MetaExp.builder().metaValue(".").build();
+        if(this.matchChar('.')) return this.isInCollection ? CharExp.of('.') : MetaExp.of(".");
         // 如果是转义或者元字符
         else if(this.matchChar('\\')){
             // 如果是元字符
-            if(this.matchChar('d')) return MetaExp.builder().metaValue("\\d").build();
-            if(this.matchChar('D')) return MetaExp.builder().metaValue("\\D").build();
-            if(this.matchChar('w')) return MetaExp.builder().metaValue("\\w").build();
-            if(this.matchChar('W')) return MetaExp.builder().metaValue("\\W").build();
-            if(this.matchChar('s')) return MetaExp.builder().metaValue("\\s").build();
-            if(this.matchChar('S')) return MetaExp.builder().metaValue("\\S").build();
+            if(this.matchChar('d')) return MetaExp.of("\\d");
+            if(this.matchChar('D')) return MetaExp.of("\\D");
+            if(this.matchChar('w')) return MetaExp.of("\\w");
+            if(this.matchChar('W')) return MetaExp.of("\\W");
+            if(this.matchChar('s')) return MetaExp.of("\\s");
+            if(this.matchChar('S')) return MetaExp.of("\\S");
+            // 如果是捕获组引用
+            if(this.includeChar("123456789")){
+                int refId = this.parseDigit();
+                if(refId > this.groupNumber) throw new RuntimeException(String.format("引用编号为%d的捕获组不存在",refId));
+                return GroupRefExp.of(refId);
+            }
+            // 具名捕获组
+            if(this.matchChar('k')){
+                // 兼容\n（n是普通字符）的写法
+                if(!this.matchChar('<')) return CharExp.of('k');
+                String refGroupName = this.parseGroupName();
+                if(!this.matchChar('>')) throw new RuntimeException(String.format("具名捕获组引用，预期是>，实际位置%d，字符%s", this.cursor, this.next()));
+                Integer refId = this.groupNameToIdMap.get(refGroupName);
+                if(refId == null) throw new RuntimeException(String.format("具名捕获组引用，引用的组名%s不存在",refGroupName));
+                return GroupRefExp.of(refId);
+            }
         }
         // 转义字符不能单独出现，在特定的环境下也有不能出现的，避免语义混乱
         else {
             if(this.isInCollection && this.includeChar(COLLECTION_ESCAPE_CHAR_SEQUENCE)) throw new RuntimeException(String.format("[]中出现不合法的特殊字符%s，必须转义",this.next()));
             else if(!this.isInCollection && this.includeChar(REGEX_ESCAPE_CHAR_SEQUENCE)) throw new RuntimeException(String.format("出现不合法的特殊字符%s，必须转义",this.next()));
         }
-        // 剩下的是转义字符，统一交给最后处理
-        return CharExp.builder().charValue(this.next()).build();
+        // 剩下的是转义字符或者合法的普通字符，统一交给最后处理
+        return CharExp.of(this.next());
     }
 
 }

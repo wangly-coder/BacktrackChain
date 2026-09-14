@@ -40,14 +40,14 @@ public class CharRange {
         regexExps.forEach(regexExp -> {
             if(regexExp instanceof CharExp) {
                 CharExp charExp = (CharExp) regexExp;
-                CharRange charRange = CharRange.of(charExp.getCharValue());
+                CharRange charRange = CharRange.of(charExp.charValue);
                 charRanges.add(charRange);
             } else if (regexExp instanceof CharRangeExp) {
                 CharRangeExp charRangeExp = (CharRangeExp) regexExp;
-                charRanges.add(CharRange.of(charRangeExp.getLeft().getCharValue(),charRangeExp.getRight().getCharValue()));
+                charRanges.add(CharRange.of(charRangeExp.left.charValue,charRangeExp.right.charValue));
             } else if (regexExp instanceof MetaExp) {
                 MetaExp metaExp = (MetaExp) regexExp;
-                charRanges.addAll(MetaUtil.MetaToCharRangeMap.get(metaExp.getMetaValue()));
+                charRanges.addAll(MetaUtil.MetaToCharRangeMap.get(metaExp.metaValue));
             } else{
                 throw new RuntimeException("无法转换的边类型");
             }

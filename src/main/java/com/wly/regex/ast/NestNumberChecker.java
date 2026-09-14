@@ -3,70 +3,68 @@ package com.wly.regex.ast;
 import com.wly.regex.ast.exp.*;
 
 
-public class NestNumberChecker implements ASTVisitor<Void,Void> {
+public class NestNumberChecker implements ASTVisitor<Integer,Void> {
     
     public final static int MAX_NEST_NUMBER = 2;
     public static final NestNumberChecker INSTANCE = new NestNumberChecker();
     
-    private NestNumberChecker(){}
+    protected NestNumberChecker(){}
 
-    @Override
-    public Void visit(UnionExp unionExp, Void context) {
-        RegexExp leftExp = unionExp.getLeft();
-        leftExp.accept(this,context);
-        int leftNum = leftExp.nestNumber;
-        RegexExp rightExp = unionExp.getRight();
-        rightExp.accept(this,context);
-        int rightNum = rightExp.nestNumber;
-        unionExp.nestNumber = Math.max(leftNum,rightNum);
-        return null;
+    public static int getNestNumber(RegexExp regexExp){
+        return regexExp.accept(INSTANCE, null);
     }
 
     @Override
-    public Void visit(ConcatExp concatExp, Void context) {
-        RegexExp leftExp = concatExp.getLeft();
-        leftExp.accept(this,context);
-        int leftNum = leftExp.nestNumber;
-        RegexExp rightExp = concatExp.getRight();
-        rightExp.accept(this,context);
-        int rightNum = rightExp.nestNumber;
-        concatExp.nestNumber = Math.max(leftNum,rightNum);
-        return null;
+    public Integer visit(UnionExp unionExp, Void context) {
+        int leftNum = unionExp.left.accept(this,context);
+        int rightNum = unionExp.right.accept(this,context);
+        return Math.max(leftNum,rightNum);
     }
 
     @Override
-    public Void visit(RepeatExp repeatExp, Void context) {
-        RegexExp innerExp = repeatExp.getCharCollectionExp();
-        innerExp.accept(this,context);
-        int innerNum = innerExp.nestNumber;
-        // 任何量词都被看做一层嵌套
-        repeatExp.nestNumber = innerNum + 1;
-        return null;
+    public Integer visit(ConcatExp concatExp, Void context) {
+        int leftNum = concatExp.left.accept(this,context);
+        int rightNum = concatExp.right.accept(this,context);
+        return Math.max(leftNum,rightNum);
     }
 
     @Override
-    public Void visit(CharCollectionExp charCollectionExp, Void context) {
-        return null;
+    public Integer visit(RepeatExp repeatExp, Void context) {
+        return repeatExp.charCollectionExp.accept(this,context) + 1;
     }
 
     @Override
-    public Void visit(CharRangeExp charRangeExp, Void context) {
-        return null;
+    public Integer visit(CharCollectionExp charCollectionExp, Void context) {
+        return 0;
     }
 
     @Override
-    public Void visit(MetaExp metaExp, Void context) {
-        return null;
+    public Integer visit(CharRangeExp charRangeExp, Void context) {
+        return 0;
     }
 
     @Override
-    public Void visit(CharExp charExp, Void context) {
-        return null;
+    public Integer visit(MetaExp metaExp, Void context) {
+        return 0;
+    }
+
+    @Override
+    public Integer visit(CharExp charExp, Void context) {
+        return 0;
+    }
+
+    @Override
+    public Integer visit(GroupExp groupExp, Void context) {
+        return groupExp.regexExp.accept(this,context);
+    }
+
+    @Override
+    public Integer visit(GroupRefExp groupRefExp, Void context) {
+        return 0;
     }
 
     public static void check(RegexExp regexExp){
-        regexExp.accept(NestNumberChecker.INSTANCE,null);
-        int maxCounterNum = regexExp.nestNumber;
+        int maxCounterNum = NestNumberChecker.getNestNumber(regexExp);
         if(maxCounterNum > MAX_NEST_NUMBER) throw new RuntimeException(
                 String.format("不合法的正则表达式：内部的嵌套计数器个数已经超出MAX_NEST_NUMBER的数量%d",MAX_NEST_NUMBER));
     }

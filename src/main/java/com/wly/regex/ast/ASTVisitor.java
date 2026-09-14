@@ -10,4 +10,6 @@ public interface ASTVisitor<R,C> {
     R visit(CharRangeExp charRangeExp, C context);
     R visit(MetaExp metaExp, C context);
     R visit(CharExp charExp, C context);
+    R visit(GroupExp groupExp, C context);
+    R visit(GroupRefExp groupRefExp, C context);
 }

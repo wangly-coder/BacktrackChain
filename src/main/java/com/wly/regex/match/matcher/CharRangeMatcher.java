@@ -14,17 +14,22 @@ public class CharRangeMatcher implements Matcher{
     }
 
     public CharRangeMatcher(CharRangeExp charRangeExp) {
-        this.left = charRangeExp.getLeft().getCharValue();
-        this.right = charRangeExp.getRight().getCharValue();
+        this.left = charRangeExp.left.charValue;
+        this.right = charRangeExp.right.charValue;
     }
 
     @Override
     public String toString() {
+        return String.format("CharRangeMatcher:%s-%s",this.left,this.right);
+    }
+
+    @Override
+    public String printSelf() {
         return String.format("[CharRange:%s-%s]", this.left, this.right);
     }
 
     @Override
-    public boolean match(String str, Pointer pointer, BackContext context) {
+    public boolean match(String str, Pointer pointer, BackContext backContext) {
         char curChar = str.charAt(pointer.index);
         if(curChar >= this.left && curChar <= this.right){
             pointer.index++;

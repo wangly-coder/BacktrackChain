@@ -28,12 +28,12 @@ public class LengthMeasurerTest {
             "(\\d+|a+)+c=2=-1",
             "(\\w+|12)+3=2=-1",
             "(\\d{3,}|a+)+c=2=-1",
-            "(a|b|\\d+)+=1=-1"
+            "(a|b|\\d+)+=1=-1",
+            "^(\\d\\d)(\\d\\d)\\2\\1\\2\\1$=12=12"
     })
     public void test_LengthMeasurer_accuracy(String regex, int minLength,int maxLength){
-        this.regexParser.closeNestCheck();
-        RegexExp regexExp = this.regexParser.parse(regex);
-        LengthInfo lengthInfo = LengthMeasurer.measureLength(regexExp);
+        RegexExp regexExp = this.regexParser.parse(regex,true);
+        LengthMeasurer.LengthInfo lengthInfo = LengthMeasurer.measureLength(regexExp);
         System.out.println("<======================对比MinLength=========================>");
         assertEquals(minLength,lengthInfo.minLength);
         System.out.println("<======================对比MaxLength=========================>");

@@ -6,12 +6,20 @@ import lombok.Data;
 
 import java.util.List;
 
-@Data
-@Builder
 public class CharCollectionExp extends RegexExp{
-    private List<RegexExp> charSequenceExp;
+    public List<RegexExp> charSequenceExp;
     // @Getter生成isNegative()方法
-    private boolean negative;
+    public boolean negative;
+
+    public CharCollectionExp(String protoString, List<RegexExp> charSequenceExp, boolean negative) {
+        super(protoString);
+        this.charSequenceExp = charSequenceExp;
+        this.negative = negative;
+    }
+
+    public static CharCollectionExp of(String protoString, List<RegexExp> charSequenceExp, boolean negative) {
+        return new CharCollectionExp(protoString,charSequenceExp,negative);
+    }
 
     @Override
     public String treeString() {

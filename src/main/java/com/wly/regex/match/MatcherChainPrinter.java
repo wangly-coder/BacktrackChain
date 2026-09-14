@@ -17,10 +17,10 @@ public class MatcherChainPrinter {
     public static String printChain(ChainMatcher head, String delim){
         String delimiter = delim == null ? ARROW_DELIM : delim;
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(head.toString());
+        stringBuilder.append(head.printSelf());
         while(head.next != null) {
             head = head.next;
-            stringBuilder.append(delimiter).append(head.toString());
+            stringBuilder.append(delimiter).append(head.printSelf());
         }
         return stringBuilder.toString();
     }
@@ -32,7 +32,7 @@ public class MatcherChainPrinter {
     public static String printCollection(List<Matcher> collection){
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("[");
-        for(Matcher matcher : collection) stringBuilder.append(matcher.toString()).append(COLLECT_DELIM);
+        for(Matcher matcher : collection) stringBuilder.append(matcher.printSelf()).append(COLLECT_DELIM);
         stringBuilder.setCharAt(stringBuilder.length() - 1, ']');
         return stringBuilder.toString();
     }

@@ -10,19 +10,18 @@ import java.util.List;
 public class ASTVisualizer implements ASTVisitor<Void, ASTVisualizer.PrintContext> {
 
     private ASTVisualizer(){}
-    public static ASTVisualizer INSTANCE = new ASTVisualizer();
+    public static final ASTVisualizer INSTANCE = new ASTVisualizer();
 
-    public static String notLastString = "├──"; // 非最后一个兄弟节点
-    public static String lastString = "└──"; // 最后一个兄弟节点
-    public static String tabStillHasBroPrefix = "│   "; // 还有兄弟节点的节点的子节点前缀
-    public static String tabNoBroPrefix = "    "; // 没有兄弟节点的节点的子节点前缀
+    public static final String notLastString = "├──"; // 非最后一个兄弟节点
+    public static final String lastString = "└──"; // 最后一个兄弟节点
+    public static final String tabStillHasBroPrefix = "│   "; // 还有兄弟节点的节点的子节点前缀
+    public static final String tabNoBroPrefix = "    "; // 没有兄弟节点的节点的子节点前缀
 
-    protected static class PrintContext{
+    protected class PrintContext{
         boolean isLast;
         String subPrefix;
         StringBuilder stringBuilder = new StringBuilder();
 
-        public PrintContext(){}
         public PrintContext(boolean isLast, String subPrefix) {
             this.isLast = isLast;
             this.subPrefix = subPrefix;
@@ -36,19 +35,21 @@ public class ASTVisualizer implements ASTVisitor<Void, ASTVisualizer.PrintContex
      */
     public static String getASTString(RegexExp regexExp){
         // 创建打印上下文并传递给根节点信息
-        PrintContext printContext = new PrintContext(true,"");
+        PrintContext printContext = INSTANCE.new PrintContext(true,"");
         // 开始访问AST
         regexExp.accept(ASTVisualizer.INSTANCE,printContext);
         return printContext.stringBuilder.toString();
     }
 
+    // 处理节点并返回子树的打印前缀
     protected String processRootNode(RegexExp regexExp,PrintContext context){
         // 判断是不是root节点
         if(context.subPrefix.isEmpty()){
             context.stringBuilder.append(regexExp.treeString()).append("\n");
             // 这里我默认设置根节点传递给子树有四个空格的缩进
             context.subPrefix = tabNoBroPrefix;
-        }else{
+        }
+        else{
             // 打印自身前缀
             String selfPrefix = context.isLast ? context.subPrefix+lastString: context.subPrefix+notLastString;
             context.stringBuilder.append(selfPrefix).append(regexExp.treeString()).append("\n");
@@ -63,11 +64,11 @@ public class ASTVisualizer implements ASTVisitor<Void, ASTVisualizer.PrintContex
         String subPrefix = this.processRootNode(unionExp,context);
         // 访问左子树，不是最后一个节点
         context.isLast = false;
-        unionExp.getLeft().accept(this,context);
+        unionExp.left.accept(this,context);
         // 访问右子树，是最后一个节点，同时要更新子树前缀，遍历时可能被修改
         context.subPrefix = subPrefix;
         context.isLast = true;
-        unionExp.getRight().accept(this,context);
+        unionExp.right.accept(this,context);
         return null;
     }
 
@@ -76,11 +77,11 @@ public class ASTVisualizer implements ASTVisitor<Void, ASTVisualizer.PrintContex
         String subPrefix = this.processRootNode(concatExp,context);
         // 访问左子树，不是最后一个节点
         context.isLast = false;
-        concatExp.getLeft().accept(this,context);
+        concatExp.left.accept(this,context);
         // 访问右子树，是最后一个节点，同时要更新子树前缀，遍历时可能被修改
         context.subPrefix = subPrefix;
         context.isLast = true;
-        concatExp.getRight().accept(this,context);
+        concatExp.right.accept(this,context);
         return null;
     }
 
@@ -89,7 +90,7 @@ public class ASTVisualizer implements ASTVisitor<Void, ASTVisualizer.PrintContex
         this.processRootNode(repeatExp,context);
         // 访问左子树，是最后一个节点
         context.isLast = true;
-        repeatExp.getCharCollectionExp().accept(this,context);
+        repeatExp.charCollectionExp.accept(this,context);
         return null;
     }
 
@@ -97,7 +98,7 @@ public class ASTVisualizer implements ASTVisitor<Void, ASTVisualizer.PrintContex
     public Void visit(CharCollectionExp charCollectionExp, PrintContext context) {
         String subPrefix = this.processRootNode(charCollectionExp,context);
         // 访问各个子树
-        List<RegexExp> regexExps = charCollectionExp.getCharSequenceExp();
+        List<RegexExp> regexExps = charCollectionExp.charSequenceExp;
         for(int i=0;i<regexExps.size();i++){
             context.isLast = i == regexExps.size() -1;
             context.subPrefix = subPrefix;
@@ -133,4 +134,20 @@ public class ASTVisualizer implements ASTVisitor<Void, ASTVisualizer.PrintContex
         return null;
     }
 
+    @Override
+    public Void visit(GroupExp groupExp, PrintContext context) {
+        // 有可能成为root节点需要考虑
+        this.processRootNode(groupExp,context);
+        // 访问唯一子树
+        context.isLast = true;
+        groupExp.regexExp.accept(this,context);
+        return null;
+    }
+
+    @Override
+    public Void visit(GroupRefExp groupRefExp, PrintContext context) {
+        // 有可能成为root节点需要考虑
+        this.processRootNode(groupRefExp,context);
+        return null;
+    }
 }

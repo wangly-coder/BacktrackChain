@@ -35,4 +35,8 @@ public class Pointer {
     public void bothForward(){
         this.preIndex = ++index;
     }
+
+    public boolean isEquals(){
+        return this.preIndex == this.index;
+    }
 }

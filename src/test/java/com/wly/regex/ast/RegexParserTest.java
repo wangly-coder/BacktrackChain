@@ -131,7 +131,7 @@ public class RegexParserTest {
         String regex = "a{0,1}";
         RegexExp regexExp = regexParser.parse(regex);
         RepeatExp repeatExp=  (RepeatExp) regexExp;
-        assertEquals(RepeatExp.RepeatExpType.QUESTION,repeatExp.getModifierType());
+        assertEquals(RepeatExp.RepeatExpType.QUESTION,repeatExp.modifierType);
     }
 
     @DisplayName("测试RepeatExp的Range转化Star")
@@ -140,7 +140,7 @@ public class RegexParserTest {
         String regex = "a{0,}";
         RegexExp regexExp = regexParser.parse(regex);
         RepeatExp repeatExp=  (RepeatExp) regexExp;
-        assertEquals(RepeatExp.RepeatExpType.STAR,repeatExp.getModifierType());
+        assertEquals(RepeatExp.RepeatExpType.STAR,repeatExp.modifierType);
     }
 
     @DisplayName("测试RepeatExp的Range转化Plus")
@@ -149,7 +149,7 @@ public class RegexParserTest {
         String regex = "a{1,}";
         RegexExp regexExp = regexParser.parse(regex);
         RepeatExp repeatExp=  (RepeatExp) regexExp;
-        assertEquals(RepeatExp.RepeatExpType.PLUS,repeatExp.getModifierType());
+        assertEquals(RepeatExp.RepeatExpType.PLUS,repeatExp.modifierType);
     }
 
     @DisplayName("测试UnionExp和ConcatExp")
@@ -200,11 +200,12 @@ public class RegexParserTest {
                         "        │       └──[Repeat:*]\n"+
                         "        │           └──[Char:b]\n"+
                         "        └──[Repeat:+]\n"+
-                        "            └──[Union]\n"+
-                        "                ├──[Char:a]\n"+
-                        "                └──[Concat]\n"+
-                        "                    ├──[Char:b]\n" +
-                        "                    └──[Char:a]\n"
+                        "            └──[Group:1]\n"+
+                        "                └──[Union]\n"+
+                        "                    ├──[Char:a]\n"+
+                        "                    └──[Concat]\n"+
+                        "                        ├──[Char:b]\n" +
+                        "                        └──[Char:a]\n"
                 ,tree);
     }
 
@@ -258,9 +259,10 @@ public class RegexParserTest {
         assertEquals("[Concat]\n" +
                 "    ├──[Char:1]\n" +
                 "    └──[Concat]\n"+
-                "        ├──[Union]\n"+
-                "        │   ├──[Char:a]\n" +
-                "        │   └──[Meta:empty]\n" +
+                "        ├──[Group:1]\n" +
+                "        │   └──[Union]\n"+
+                "        │       ├──[Char:a]\n" +
+                "        │       └──[Meta:empty]\n" +
                 "        └──[Char:2]\n",tree);
     }
 

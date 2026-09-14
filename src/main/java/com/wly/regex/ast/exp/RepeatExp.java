@@ -9,15 +9,32 @@ import lombok.Data;
  * 关于{}修饰符，只支持{m},{m,}, {m, n}三种形式，且内部不支持任何带有空格的写法
  */
 
-@Data
-@Builder
 public class RepeatExp extends RegexExp{
-    private RegexExp charCollectionExp;
-    private int min;
-    private int max; // -1代表无穷大
-    private RepeatExpType modifierType;
-    @Builder.Default
-    private boolean greedy = true;
+    public RegexExp charCollectionExp;
+    public int min;
+    public int max; // -1代表无穷大
+    public RepeatExpType modifierType;
+    public boolean greedy = true;
+
+    public RepeatExp(RegexExp charCollectionExp,RepeatExpType modifierType) {
+        this.charCollectionExp = charCollectionExp;
+        this.modifierType = modifierType;
+    }
+
+    public static RepeatExp of(RegexExp charCollectionExp,RepeatExpType modifierType) {
+        return new RepeatExp(charCollectionExp,modifierType);
+    }
+
+    public RepeatExp(RegexExp charCollectionExp, int min, int max, RepeatExpType modifierType) {
+        this.charCollectionExp = charCollectionExp;
+        this.min = min;
+        this.max = max;
+        this.modifierType = modifierType;
+    }
+
+    public static RepeatExp of(RegexExp charCollectionExp, int min, int max, RepeatExpType modifierType) {
+        return new RepeatExp(charCollectionExp,min,max,modifierType);
+    }
 
     public enum RepeatExpType{
         QUESTION('?'),STAR('*'),PLUS('+'),RANGE('\0');

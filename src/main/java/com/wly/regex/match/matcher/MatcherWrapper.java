@@ -22,8 +22,13 @@ public class MatcherWrapper extends ChainMatcher {
     }
 
     @Override
-    public boolean doMatch(String str, Pointer pointer, BackContext context) {
+    public String printSelf() {
+        return this.matcher.printSelf();
+    }
+
+    @Override
+    public boolean doMatch(String str, Pointer pointer, BackContext backContext) {
         if(pointer.index == str.length()) return this.matchEmptyString;
-        return this.matcher.match(str, pointer, context);
+        return this.matcher.match(str, pointer, backContext);
     }
 }

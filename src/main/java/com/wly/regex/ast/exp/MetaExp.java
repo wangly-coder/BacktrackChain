@@ -1,11 +1,11 @@
 package com.wly.regex.ast.exp;
 
 import com.wly.regex.ast.ASTVisitor;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-@Data
-@Builder
+@AllArgsConstructor(staticName = "of")
 public class MetaExp extends RegexExp{
     // 支持的元字符
     public static final String LOW_D = "\\d";
@@ -16,7 +16,7 @@ public class MetaExp extends RegexExp{
     public static final String UP_S = "\\S";
     public static final String DOT = ".";
 
-    private String metaValue;
+    public String metaValue;
 
     @Override
     public String treeString() {
@@ -26,9 +26,5 @@ public class MetaExp extends RegexExp{
     @Override
     public <R, C> R accept(ASTVisitor<R, C> astVisitor, C context) {
         return astVisitor.visit(this,context);
-    }
-
-    public static MetaExp of(String metaValue){
-        return MetaExp.builder().metaValue(metaValue).build();
     }
 }

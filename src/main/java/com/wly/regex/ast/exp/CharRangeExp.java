@@ -5,16 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-@Data
-@Builder
 @AllArgsConstructor(staticName = "of")
 public class CharRangeExp extends RegexExp{
-    private CharExp left;
-    private CharExp right;
+    public CharExp left;
+    public CharExp right;
 
     @Override
     public String treeString() {
-        return String.format("[CharRange:%s-%s]",this.left.getCharValue(),this.right.getCharValue());
+        return String.format("[CharRange:%s-%s]",this.left.charValue,this.right.charValue);
     }
 
     @Override

@@ -6,9 +6,11 @@ import com.wly.regex.ast.ASTVisitor;
  * 正则表达式AST中的节点父类
  */
 public abstract class RegexExp {
-
-    public int nestNumber;
-
+    public String protoString; // 对应的正则表达式
+    public RegexExp(){}
+    public RegexExp(String protoString) {
+        this.protoString = protoString;
+    }
     /**
      * 用于提供打印AST的字符串
      * @return

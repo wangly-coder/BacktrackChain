@@ -27,8 +27,7 @@ public class NestNumberCheckerTest {
     })
     public void testNormal(String regex,int expected){
         RegexExp regexExp = this.regexParser.parse(regex);
-        System.out.printf("<========================\n%d\n========================>\n",regexExp.nestNumber);
-        assertEquals(expected,regexExp.nestNumber);
+        assertEquals(expected,NestNumberChecker.getNestNumber(regexExp));
     }
 
     @Test

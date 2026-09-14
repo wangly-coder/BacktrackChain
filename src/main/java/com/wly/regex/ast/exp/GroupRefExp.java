@@ -4,12 +4,12 @@ import com.wly.regex.ast.ASTVisitor;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(staticName = "of")
-public class CharExp extends RegexExp {
-    public char charValue;
+public class GroupRefExp extends RegexExp{
+    public int refId;
 
     @Override
     public String treeString() {
-        return String.format("[Char:%s]",this.charValue);
+        return String.format("[GroupRef:%d]",this.refId);
     }
 
     @Override

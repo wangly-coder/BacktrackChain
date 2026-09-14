@@ -12,7 +12,7 @@ public class StringMatcher implements Matcher{
 
     @Override
     public String toString() {
-        return String.format("[String:%s]",this.string);
+        return String.format("StringMatcher:%s",this.string.isEmpty() ? "empty" : this.string);
     }
 
     @Override
@@ -21,7 +21,12 @@ public class StringMatcher implements Matcher{
     }
 
     @Override
-    public boolean match(String str, Pointer pointer, BackContext context) {
+    public String printSelf() {
+        return String.format("[String:%s]",this.string);
+    }
+
+    @Override
+    public boolean match(String str, Pointer pointer, BackContext backContext) {
         if(this.string.isEmpty()) return true;
         int length = this.string.length();
         for(int i=0;i<length;i++){
