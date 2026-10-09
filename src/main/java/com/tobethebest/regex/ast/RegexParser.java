@@ -157,7 +157,6 @@ public class RegexParser {
 
     protected RegexExp parseUnionExp() {
         RegexExp left,right;
-        int startIndex = this.cursor;
         // 允许空字符串的写法
         if(this.matchChar('|')) {
             left = MetaExp.of("");
@@ -198,7 +197,6 @@ public class RegexParser {
     }
 
     protected RegexExp parseRepeatExp() {
-        int startIndex = this.cursor;
         RegexExp charCollectionExp = this.parseCharCollectionExp();
         // 开始解析修饰符
         int min, max;
@@ -242,7 +240,6 @@ public class RegexParser {
     }
 
     protected RegexExp parseCharCollectionExp() {
-        int startIndex = this.cursor;
         if(this.matchChar('[')){
             this.isInCollection = true;
             // 集合表达式中必须有字符
@@ -266,7 +263,6 @@ public class RegexParser {
     }
 
     protected RegexExp parseCharGroupExp() {
-        int startIndex = this.cursor;
         if(this.matchChar('(')){
             if(this.matchChar(')')) throw new RuntimeException("()内不能为空");
             RegexExp groupExp;

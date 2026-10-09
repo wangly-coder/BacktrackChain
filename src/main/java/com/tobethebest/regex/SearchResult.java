@@ -68,7 +68,7 @@ public class SearchResult {
 
     /**
      * 将匹配到的整串和所有捕获组对应的子串按顺序加入到链表中
-     * @return
+     * @return 当前匹配结果和内部的组集合
      */
     public List<String> getGroupStrList(){
         List<String> result = new ArrayList<>();

@@ -4,7 +4,6 @@ import com.tobethebest.regex.ast.RegexParser;
 import com.tobethebest.regex.match.matcher.ChainMatcher;
 import com.tobethebest.regex.match.MatchContext;
 import com.tobethebest.regex.match.Pointer;
-import com.tobethebest.regex.match.matcher.RepeatMatcher;
 import com.tobethebest.regex.match.back.BackContext;
 import com.tobethebest.regex.match.back.BackPoint;
 

@@ -232,7 +232,7 @@ public class RegexParserTest {
             "|a|=选择表达式中最多只允许一个空串匹配",
             "a||b|=选择表达式中最多只允许一个空串匹配",
     })
-    public void testUnionExpEmptyString_exception(String regex,String eMessage){;
+    public void testUnionExpEmptyString_exception(String regex,String eMessage){
         Exception exception = assertThrows(RuntimeException.class,() -> this.regexParser.parse(regex));
         assertEquals(eMessage,exception.getMessage());
     }

@@ -4,7 +4,6 @@ import com.tobethebest.regex.ast.exp.CharExp;
 import com.tobethebest.regex.ast.exp.CharRangeExp;
 import com.tobethebest.regex.ast.exp.MetaExp;
 import com.tobethebest.regex.ast.exp.RegexExp;
-import lombok.AllArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -176,7 +175,7 @@ public class CharRange {
      * 将一系列表达式进行区间合并后返回合并后的表达式
      * @param regexExps 要合并的表达式集合
      * @param isNegative 是否取区间补集
-     * @return
+     * @return 合并后的表达式集合
      */
     public static List<RegexExp> mergeRegexExps(List<RegexExp> regexExps,boolean isNegative){
         List<CharRange> charRanges = regexExpsToCharRanges(regexExps);
