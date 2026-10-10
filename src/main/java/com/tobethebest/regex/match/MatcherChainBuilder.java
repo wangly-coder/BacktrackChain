@@ -248,7 +248,7 @@ public class MatcherChainBuilder implements ASTVisitor<ChainMatcher, MatcherChai
         context.preRepeatMatcher = null;
         ChainMatcher lookaroundChainHead = lookaroundExp.innerExp.accept(this,context);
         context.preRepeatMatcher = preRepeatMatcher;
-        LookaroundMatcher lookaroundMatcher = new LookaroundMatcher(lookaroundExp.lookaroundType,lookaroundExp.lengthInfo,lookaroundChainHead);
+        LookaroundMatcher lookaroundMatcher = new LookaroundMatcher(lookaroundExp.lookaroundType,lookaroundExp.getLengthInfo(),lookaroundChainHead);
         return lookaroundMatcher;
     }
 }

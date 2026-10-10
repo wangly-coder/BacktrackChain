@@ -45,40 +45,6 @@ public class RegexMatcher {
     protected boolean backtrack(String str,Pointer pointer,BackContext backContext){
         // 失败则回溯
         BackPoint backPoint = backContext.restore(pointer);
-//        while(backPoint != null) {
-//            /*
-//                根据不同类型进行不同处理
-//                始终贯穿回溯在外部，外部处理器在外部处理的原则
-//            */
-//            BackPoint.BPTYPE bptype = backPoint.bptype;
-//            if(bptype == BackPoint.BPTYPE.UNION){
-//                ChainMatcher headMatcher = backPoint.nextMatcher;
-//                // 走完该UM的这条路径，失败则继续回溯
-//                if(!headMatcher.chainMatch(str, pointer, backContext)) {
-//                    backPoint = backContext.restore(pointer);
-//                    continue;
-//                }
-//                // 如果成功了还需要判断是否是某个RM的内部，如果是则需要进入RM回溯处理
-//                if(this.handleBackRepeatNest(str,pointer,backContext,backPoint)) return true;
-//                backPoint = backContext.restore(pointer);
-//            }
-//            else if(bptype == BackPoint.BPTYPE.LOOKAROUND){
-//                ChainMatcher nextMatcher = backPoint.nextMatcher;
-//                // 走完LEM到最近RM的一段路
-//                if(nextMatcher != null && !nextMatcher.chainMatch(str, pointer, backContext)){
-//                    backPoint = backContext.restore(pointer);
-//                    continue;
-//                }
-//                // 走完后交给外部RM处理
-//                if(this.handleBackRepeatNest(str,pointer,backContext,backPoint)) return true;
-//                backPoint = backContext.restore(pointer);
-//            }
-//            else {
-//                // 如果成功了还需要判断是否是某个RM的内部，如果是则需要进入RM回溯处理
-//                if(this.handleBackRepeatNest(str,pointer,backContext,backPoint)) return true;
-//                backPoint = backContext.restore(pointer);
-//            }
-//        }
         while(backPoint != null) {
             ChainMatcher nextMatcher = backPoint.nextMatcher;
             if(nextMatcher == null || nextMatcher.chainMatch(str, pointer, backContext)) return true;
@@ -86,23 +52,6 @@ public class RegexMatcher {
         }
         return false;
     }
-
-    // 处理回溯时的RM嵌套
-//    protected boolean handleBackRepeatNest(String str,Pointer pointer,BackContext backContext,BackPoint backPoint){
-//        // 如果成功了还需要判断是否是某个RM的内部，如果是则需要进入RM回溯
-//        RepeatMatcher preRepeatMatcher = backPoint.preOrSelfRepeatMatcher;
-//        // 如果处理的是最外层的UM，其外部匹配链已经处理好了，无需再匹配
-//        if(preRepeatMatcher == null && backPoint.bptype == BackPoint.BPTYPE.UNION) return true;
-//        if(preRepeatMatcher != null) {
-//            // 如果回溯处理失败，那么继续回溯
-//            if(!preRepeatMatcher.back(str,pointer,backContext,backPoint)) return false;
-//        }
-//        // 达到了是最外部的RM了，直接拿取外部匹配链
-//        ChainMatcher nextMatcher = backPoint.nextMatcher;
-//        if(nextMatcher == null) return true;
-//        // 匹配成功则返回，否则继续回溯
-//        return nextMatcher.chainMatch(str, pointer, backContext);
-//    }
 
     /**
      * 判断给定字符串是否整个符合正则表达式，等同于正则表达式加上^$两个限定符

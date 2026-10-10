@@ -109,7 +109,7 @@ public class LengthMeasurer implements ASTVisitor<LengthMeasurer.LengthInfo, Len
 
     @Override
     public LengthInfo visit(LookaroundExp lookaroundExp, LengthMeasurerContext context) {
-        lookaroundExp.lengthInfo = lookaroundExp.innerExp.accept(this,context);
+        lookaroundExp.setLengthInfo(lookaroundExp.innerExp.accept(this,context));
         // 不消耗任何字符，长度为0
         return LengthInfo.of(0,0);
     }

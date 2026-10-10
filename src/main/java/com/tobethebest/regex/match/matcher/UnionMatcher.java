@@ -21,6 +21,7 @@ public class UnionMatcher extends ChainMatcher {
         this.unionChainMaxGroupIdList = new ArrayList<>();
     }
 
+    @Override
     public void setNext(ChainMatcher chainMatcher) {
         this.next = chainMatcher;
         for (ChainMatcher headMatcher : this.unionChainHeads) {

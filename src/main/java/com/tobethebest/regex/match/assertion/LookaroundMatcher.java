@@ -73,7 +73,7 @@ public class LookaroundMatcher extends ChainMatcher{
                     int maxIndex = curIndex - this.lengthInfo.minLength;
                     if(maxIndex < 0) return false;
                     // 确定最小下标
-                    int minIndex = this.lengthInfo.maxLength == -1 ? 0 : Math.max(curIndex - this.lengthInfo.maxLength,0);
+                    int minIndex = Math.max(curIndex - this.lengthInfo.maxLength,0);
                     // 满足则进行匹配，找到最远匹配下标并从该下标（最短长度）开始匹配
                     nextMatcher = this.lookaroundChainHead;
                     for(int i = maxIndex; i >= minIndex ;i--) {
@@ -99,7 +99,7 @@ public class LookaroundMatcher extends ChainMatcher{
                     maxIndex = curIndex - this.lengthInfo.minLength;
                     if(maxIndex < 0) return true;
                     // 确定最小下标
-                    minIndex = this.lengthInfo.maxLength == -1 ? 0 : Math.max(curIndex - this.lengthInfo.maxLength,0);
+                    minIndex = Math.max(curIndex - this.lengthInfo.maxLength,0);
                     // 满足则进行匹配，找到最远匹配下标并从该下标（最短长度）开始匹配
                     nextMatcher = this.lookaroundChainHead;
                     for(int i = maxIndex; i >= minIndex ;i--) {

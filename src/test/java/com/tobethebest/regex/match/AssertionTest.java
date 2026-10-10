@@ -22,7 +22,7 @@ import org.junit.platform.suite.api.Suite;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Suite
 @SelectClasses(value = {
@@ -132,6 +132,22 @@ class TestLookaroundFrontAndBuild {
         assertEquals("[RS:[Name:1-(a(?=b+)c)+,Pre:null]] -> [GS:1] -> [String:a]" +
                 " -> [LM:[Type:(?=),Chains:{[RS:[Name:2-b+,Pre:null]] -> [String:b] -> [RE:2]}]]" +
                 " -> [String:c] -> [GE:1] -> [RE:1]", matcherString);
+    }
+
+    private static Stream<Arguments> LeftInnerInfiniteLengthProvider(){
+        return Stream.of(
+                Arguments.of("(b+|d)(?<!\\1{2})y",
+                        "左向断言内部表达式最大长度不能是无穷大"),
+                Arguments.of("((a+|bb)c)(?<!\\1\\d)x",
+                        "左向断言内部表达式最大长度不能是无穷大")
+        );
+    }
+
+    @DisplayName("测试左向断言内部无穷大长度报错，无法构建")
+    @ParameterizedTest
+    @MethodSource("LeftInnerInfiniteLengthProvider")
+    public void test_leftInnerInfiniteLength(String regex,String errorMsg){
+        assertThrows(RuntimeException.class, () -> new TestedRegexMatcher(regex),errorMsg);
     }
 }
 
@@ -279,11 +295,6 @@ class TestLookaroundMatcher{
                         Arrays.asList(
                                 Arrays.asList("aab", "aa")
                         )),
-                Arguments.of("(b+|d)(?<!\\1{2})y",
-                        "xbb ydy",
-                        Arrays.asList(
-                                Arrays.asList("dy", "d")
-                        )),
                 Arguments.of("((a+|b)c)(?!\\1\\d)x",
                         "acx",
                         Arrays.asList(
@@ -295,12 +306,6 @@ class TestLookaroundMatcher{
                         Arrays.asList(
                                 Arrays.asList("12e", "12"),
                                 Arrays.asList("34e", "34")
-                        )),
-
-                Arguments.of("((a+|bb)c)(?<!\\1\\d)x",
-                        "acx",
-                        Arrays.asList(
-                                Arrays.asList("acx", "ac", "a")
                         ))
         );
     }
